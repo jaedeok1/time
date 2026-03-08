@@ -51,7 +51,7 @@ export async function GET(
 
     for (const date of dates) {
       for (const hour of HOURS) {
-        const unavailableCount = meeting.participants.filter((p) =>
+        const unavailableCount = meeting.participants.filter((p: typeof meeting.participants[number]) =>
           p.unavailableSlots.some((s) => s.date === date && s.timeSlot === hour)
         ).length;
 
