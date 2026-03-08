@@ -3,6 +3,17 @@ import { prisma } from "@/lib/prisma";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i)); // ["0".."23"]
 
+type UnavailableSlot = { date: string; timeSlot: string; id: string; participantId: string };
+type Participant = {
+  id: string;
+  name: string;
+  phone: string;
+  createdAt: Date;
+  meetingId: string;
+  editToken: string;
+  unavailableSlots: UnavailableSlot[];
+};
+
 function getDateRange(startDate: Date, endDate: Date): string[] {
   const dates: string[] = [];
   const current = new Date(startDate);
@@ -38,9 +49,11 @@ export async function GET(
       return NextResponse.json({ error: "모임을 찾을 수 없습니다." }, { status: 404 });
     }
 
+    const participants = meeting.participants as Participant[];
+
     // Calculate optimal time slots (per hour)
     const dates = getDateRange(meeting.startDate, meeting.endDate);
-    const totalParticipants = meeting.participants.length;
+    const totalParticipants = participants.length;
 
     const timeOptions: {
       date: string;
@@ -51,12 +64,8 @@ export async function GET(
 
     for (const date of dates) {
       for (const hour of HOURS) {
-        const unavailableCount = meeting.participants.filter(
-          (p: typeof meeting.participants[number]) =>
-            p.unavailableSlots.some(
-              (s: { date: string; timeSlot: string }) =>
-                s.date === date && s.timeSlot === hour
-            )
+        const unavailableCount = participants.filter((p) =>
+          p.unavailableSlots.some((s) => s.date === date && s.timeSlot === hour)
         ).length;
 
         const availableCount = totalParticipants - unavailableCount;
@@ -67,7 +76,7 @@ export async function GET(
     timeOptions.sort((a, b) => b.availableCount - a.availableCount);
     const top5 = timeOptions.slice(0, 5);
 
-    const participantsWithMaskedPhone = meeting.participants.map((p) => ({
+    const participantsWithMaskedPhone = participants.map((p) => ({
       id: p.id,
       name: p.name,
       phone: p.phone.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2"),
