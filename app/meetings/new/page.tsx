@@ -10,7 +10,11 @@ export default function NewMeetingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const today = new Date().toISOString().split("T")[0];
+
   const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
     title: "",
     description: "",
     startDate: "",
@@ -24,12 +28,12 @@ export default function NewMeetingPage() {
     const { name, value } = e.target;
     setFormData((prev) => {
       const next = { ...prev, [name]: value };
-      // Auto-set deadline to the day before startDate
+      // Auto-set deadline to the day before startDate, but not before today
       if (name === "startDate" && value) {
         const d = new Date(value + "T00:00:00");
         d.setDate(d.getDate() - 1);
         const ymd = d.toISOString().split("T")[0];
-        next.deadline = ymd;
+        next.deadline = ymd < today ? today : ymd;
       }
       return next;
     });
@@ -39,6 +43,14 @@ export default function NewMeetingPage() {
     e.preventDefault();
     setError("");
 
+    if (!formData.name.trim()) {
+      setError("이름을 입력해주세요.");
+      return;
+    }
+    if (!formData.phone.trim()) {
+      setError("전화번호를 입력해주세요.");
+      return;
+    }
     if (!formData.title.trim()) {
       setError("모임 이름을 입력해주세요.");
       return;
@@ -55,6 +67,10 @@ export default function NewMeetingPage() {
       setError("응답 마감일을 설정해주세요.");
       return;
     }
+    if (formData.deadline < today) {
+      setError("응답 마감일은 오늘 이후여야 합니다.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -62,6 +78,8 @@ export default function NewMeetingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          name: formData.name.trim(),
+          phone: formData.phone.trim(),
           title: formData.title,
           description: formData.description || null,
           startDate: new Date(formData.startDate).toISOString(),
@@ -92,8 +110,6 @@ export default function NewMeetingPage() {
     }
   };
 
-  const today = new Date().toISOString().split("T")[0];
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -123,6 +139,39 @@ export default function NewMeetingPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Organizer info */}
+            <div className="border border-gray-200 rounded-xl p-4 space-y-4">
+              <p className="text-sm font-semibold text-gray-700">주최자 정보</p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  이름 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="홍길동"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  전화번호 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="01012345678"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  required
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 모임 이름 <span className="text-red-500">*</span>
@@ -152,7 +201,7 @@ export default function NewMeetingPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   시작 날짜 <span className="text-red-500">*</span>
