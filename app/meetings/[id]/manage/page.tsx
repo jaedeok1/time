@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   RefreshCw,
   ExternalLink,
+  Calendar,
 } from "lucide-react";
 
 interface Participant {
@@ -281,6 +282,16 @@ export default function ManagePage() {
           </div>
           <p className="text-xs text-gray-500 mt-2">
             이 링크를 참가자들에게 공유하세요.
+          </p>
+          <Link
+            href={`/invite/${meeting.token}`}
+            className="mt-3 flex items-center justify-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-medium px-4 py-2.5 rounded-xl text-sm transition-colors"
+          >
+            <Calendar className="w-4 h-4" />
+            내 가용시간 입력하기
+          </Link>
+          <p className="text-xs text-gray-500 mt-1 text-center">
+            주최자도 본인의 가능한 시간을 직접 입력할 수 있습니다.
           </p>
         </div>
 

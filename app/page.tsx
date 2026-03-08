@@ -35,7 +35,7 @@ export default function Home() {
             className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-4 rounded-xl text-lg transition-colors shadow-lg"
           >
             <Calendar className="w-5 h-5" />
-            모임 만들기
+            모임 시작하기
           </Link>
         </div>
 
@@ -50,9 +50,9 @@ export default function Home() {
               <div className="bg-indigo-600 text-white text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center mb-3">
                 1
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">모임 만들기</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">모임 열기</h3>
               <p className="text-gray-600 text-sm">
-                모임 이름, 날짜 범위, 응답 마감일을 설정하고 모임을 생성합니다.
+                모임 이름, 날짜 범위, 응답 마감일을 설정하고 모임을 시작합니다.
               </p>
             </div>
             <div className="flex flex-col items-center text-center">
