@@ -51,8 +51,12 @@ export async function GET(
 
     for (const date of dates) {
       for (const hour of HOURS) {
-        const unavailableCount = meeting.participants.filter((p: typeof meeting.participants[number]) =>
-          p.unavailableSlots.some((s) => s.date === date && s.timeSlot === hour)
+        const unavailableCount = meeting.participants.filter(
+          (p: typeof meeting.participants[number]) =>
+            p.unavailableSlots.some(
+              (s: { date: string; timeSlot: string }) =>
+                s.date === date && s.timeSlot === hour
+            )
         ).length;
 
         const availableCount = totalParticipants - unavailableCount;
