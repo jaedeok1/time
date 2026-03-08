@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error creating meeting:", error);
     return NextResponse.json(
-      { error: "모임을 생성하는 중 오류가 발생했습니다." },
+      { error: "모임을 생성하는 중 오류가 발생했습니다.", detail: String(error) },
       { status: 500 }
     );
   }
