@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 generator client {
@@ -7,33 +7,33 @@ generator client {
 }
 
 model Meeting {
-  id           String   @id @default(cuid())
-  token        String   @unique @default(cuid())
-  title        String
-  description  String?
-  startDate    DateTime
-  endDate      DateTime
-  deadline     DateTime
-  isConfirmed  Boolean  @default(false)
+  id            String   @id @default(cuid())
+  token         String   @unique @default(cuid())
+  title         String
+  description   String?
+  startDate     DateTime
+  endDate       DateTime
+  deadline      DateTime
+  isConfirmed   Boolean  @default(false)
   confirmedDate String?
   confirmedSlot String?
-  createdAt    DateTime @default(now())
-  participants Participant[]
+  createdAt     DateTime @default(now())
+  participants  Participant[]
 }
 
 model Participant {
-  id          String   @id @default(cuid())
-  meetingId   String
-  name        String
-  phone       String
-  editToken   String   @unique @default(cuid())
-  createdAt   DateTime @default(now())
-  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  id               String            @id @default(cuid())
+  meetingId        String
+  name             String
+  phone            String
+  editToken        String            @unique @default(cuid())
+  createdAt        DateTime          @default(now())
+  meeting          Meeting           @relation(fields: [meetingId], references: [id], onDelete: Cascade)
   unavailableSlots UnavailableSlot[]
 }
 
 model UnavailableSlot {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   participantId String
   date          String
   timeSlot      String
