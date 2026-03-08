@@ -92,7 +92,7 @@ export default function NewMeetingPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "오류가 발생했습니다.");
+        setError((data.error || "오류가 발생했습니다.") + (data.detail ? ` [${data.detail}]` : ""));
         return;
       }
 
