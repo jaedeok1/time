@@ -36,12 +36,14 @@ export async function POST(request: NextRequest) {
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         deadline: new Date(deadline),
-        participants: {
-          create: {
-            name,
-            phone: normalizedPhone,
-          },
-        },
+      },
+    });
+
+    await prisma.participant.create({
+      data: {
+        meetingId: meeting.id,
+        name,
+        phone: normalizedPhone,
       },
     });
 
