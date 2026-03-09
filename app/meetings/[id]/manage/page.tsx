@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Copy, CheckCircle, RefreshCw, Users, Share2 } from "lucide-react";
+import { Copy, CheckCircle, RefreshCw, Users, Share2, ChevronDown, ChevronUp } from "lucide-react";
 
 interface Participant {
   id: string;
@@ -89,7 +89,7 @@ function TimeView({
 
   return (
     <div>
-      {/* Date tab track — inset pill */}
+      {/* Date tab track */}
       <div className="bg-base neu-deep rounded-2xl p-1.5 flex gap-1 overflow-x-auto mb-6">
         {dates.map((date) => {
           const d = new Date(date + "T00:00:00");
@@ -131,17 +131,12 @@ function TimeView({
                 {hour}:00
               </span>
               <div className="flex-1 flex items-center gap-3">
-                {/* Progress track — inset */}
                 <div className="flex-1 h-2 bg-base neu-inset-sm rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
                       width: `${ratio * 100}%`,
-                      background: ratio > 0.8
-                        ? "#38B2AC"
-                        : ratio > 0.5
-                        ? "#6C63FF"
-                        : "#A0AEC0",
+                      background: ratio > 0.8 ? "#38B2AC" : ratio > 0.5 ? "#6C63FF" : "#A0AEC0",
                     }}
                   />
                 </div>
@@ -177,6 +172,7 @@ export default function ManagePage() {
   const [viewTab, setViewTab] = useState<"person" | "time">("person");
   const [timeViewDate, setTimeViewDate] = useState("");
   const [sharedConfirm, setSharedConfirm] = useState(false);
+  const [expandedPersonId, setExpandedPersonId] = useState<string | null>(null);
 
   const fetchMeeting = useCallback(async () => {
     try {
@@ -202,11 +198,12 @@ export default function ManagePage() {
       ? `${window.location.origin}/invite/${meeting.token}`
       : "";
 
-  const handleShareConfirm = async () => {
-    if (!meeting?.confirmedDate || !meeting?.confirmedSlot) return;
-    const text = `📅 약속이 확정되었습니다!\n\n${meeting.title}\n${formatDate(meeting.confirmedDate)} ${formatSlotLabel(meeting.confirmedSlot)}\n\n${inviteLink}`;
+  const handleShareConfirm = useCallback(async (m: Meeting) => {
+    if (!m.confirmedDate || !m.confirmedSlot) return;
+    const link = typeof window !== "undefined" ? `${window.location.origin}/invite/${m.token}` : "";
+    const text = `📅 약속이 확정되었습니다!\n\n${m.title}\n${formatDate(m.confirmedDate)} ${formatSlotLabel(m.confirmedSlot)}\n\n${link}`;
     if (typeof navigator !== "undefined" && navigator.share) {
-      try { await navigator.share({ title: meeting.title, text }); return; } catch {}
+      try { await navigator.share({ title: m.title, text }); return; } catch {}
     }
     try { await navigator.clipboard.writeText(text); } catch {
       const ta = document.createElement("textarea");
@@ -215,7 +212,7 @@ export default function ManagePage() {
     }
     setSharedConfirm(true);
     setTimeout(() => setSharedConfirm(false), 2000);
-  };
+  }, []);
 
   const handleCopyLink = async () => {
     if (!inviteLink) return;
@@ -239,8 +236,20 @@ export default function ManagePage() {
         body: JSON.stringify({ date: selectedSlot.date, timeSlot: selectedSlot.timeSlot }),
       });
       const data = await res.json();
-      if (res.ok) { await fetchMeeting(); setSelectedSlot(null); }
-      else setConfirmError(data.error || "약속 확정 중 오류가 발생했습니다.");
+      if (res.ok) {
+        await fetchMeeting();
+        setSelectedSlot(null);
+        // 확정 직후 바로 공유
+        const updated: Meeting = {
+          ...meeting,
+          isConfirmed: true,
+          confirmedDate: selectedSlot.date,
+          confirmedSlot: selectedSlot.timeSlot,
+        };
+        handleShareConfirm(updated);
+      } else {
+        setConfirmError(data.error || "약속 확정 중 오류가 발생했습니다.");
+      }
     } catch { setConfirmError("서버와 연결할 수 없습니다."); }
     finally { setConfirming(false); }
   };
@@ -261,17 +270,13 @@ export default function ManagePage() {
       <div className="min-h-screen bg-base flex items-center justify-center px-6">
         <div className="neu-card p-10 text-center max-w-sm w-full">
           <p className="text-fore mb-6">{error || "약속을 찾을 수 없습니다."}</p>
-          <Link href="/" className="neu-btn neu-btn-secondary px-6 py-3 text-sm">
-            홈으로 돌아가기
-          </Link>
+          <Link href="/" className="neu-btn neu-btn-secondary px-6 py-3 text-sm">홈으로 돌아가기</Link>
         </div>
       </div>
     );
   }
 
-  const displayedSlots = showAllSlots
-    ? meeting.optimalSlots
-    : meeting.optimalSlots.slice(0, 5);
+  const displayedSlots = showAllSlots ? meeting.optimalSlots : meeting.optimalSlots.slice(0, 5);
 
   return (
     <div className="min-h-screen bg-base">
@@ -335,9 +340,7 @@ export default function ManagePage() {
             }}
           >
             <div>
-              <p className="text-white/70 text-xs font-semibold uppercase tracking-widest mb-2">
-                Confirmed
-              </p>
+              <p className="text-white/70 text-xs font-semibold uppercase tracking-widest mb-2">Confirmed</p>
               <p className="text-white text-2xl font-display font-extrabold">
                 {formatDateShort(meeting.confirmedDate)}
               </p>
@@ -346,8 +349,8 @@ export default function ManagePage() {
               </p>
             </div>
             <button
-              onClick={handleShareConfirm}
-              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-300 hover:-translate-y-0.5 whitespace-nowrap backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+              onClick={() => handleShareConfirm(meeting)}
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-300 hover:-translate-y-0.5 whitespace-nowrap backdrop-blur-sm"
             >
               {sharedConfirm
                 ? <><CheckCircle size={16} strokeWidth={2} /> 복사됨</>
@@ -364,20 +367,14 @@ export default function ManagePage() {
             <div className="flex-1 neu-deep rounded-2xl px-4 py-3 text-sm text-muted font-mono truncate min-w-0">
               {inviteLink}
             </div>
-            <button
-              onClick={handleCopyLink}
-              className="neu-btn neu-btn-secondary px-4 py-3 text-sm shrink-0"
-            >
+            <button onClick={handleCopyLink} className="neu-btn neu-btn-secondary px-4 py-3 text-sm shrink-0">
               {copied
                 ? <><CheckCircle size={16} strokeWidth={2} className="text-success" /> 복사됨</>
                 : <><Copy size={16} strokeWidth={2} /> 복사</>
               }
             </button>
           </div>
-          <Link
-            href={`/invite/${meeting.token}`}
-            className="mt-4 w-full neu-btn neu-btn-secondary py-3 text-sm"
-          >
+          <Link href={`/invite/${meeting.token}`} className="mt-4 w-full neu-btn neu-btn-secondary py-3 text-sm">
             나도 응답하기 →
           </Link>
         </div>
@@ -387,7 +384,8 @@ export default function ManagePage() {
 
           {/* Optimal slots */}
           <div className="neu-card p-7">
-            <h2 className="font-display font-bold text-fore mb-5">추천 시간대</h2>
+            <h2 className="font-display font-bold text-fore mb-1">추천 시간대</h2>
+            <p className="text-xs text-muted mb-5">시간을 누르면 참석 가능한 사람을 볼 수 있어요</p>
 
             {meeting.totalParticipants === 0 ? (
               <div className="neu-deep rounded-2xl p-6 text-center">
@@ -401,58 +399,97 @@ export default function ManagePage() {
               <>
                 <div className="space-y-2">
                   {displayedSlots.map((slot, index) => {
+                    const slotKey = `${slot.date}-${slot.timeSlot}`;
                     const isSelected = selectedSlot?.date === slot.date && selectedSlot?.timeSlot === slot.timeSlot;
                     const isConfirmed = meeting.isConfirmed && meeting.confirmedDate === slot.date && meeting.confirmedSlot === slot.timeSlot;
                     const isTop = index === 0;
 
+                    // People available for this slot
+                    const availablePeople = meeting.participants.filter(
+                      (p) => !p.unavailableSlots.some((s) => s.date === slot.date && s.timeSlot === slot.timeSlot)
+                    );
+
                     return (
-                      <button
-                        key={`${slot.date}-${slot.timeSlot}`}
-                        onClick={() => !meeting.isConfirmed && setSelectedSlot(isSelected ? null : slot)}
-                        className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all duration-300 text-left ${
-                          isConfirmed
-                            ? "bg-success/10 neu-raised-sm"
-                            : isSelected
-                            ? "bg-base neu-deep"
-                            : isTop
-                            ? "bg-base neu-raised-sm hover:-translate-y-0.5 hover:shadow-[9px_9px_16px_rgb(163,177,198,0.6),-9px_-9px_16px_rgba(255,255,255,0.5)]"
-                            : "bg-base neu-inset-sm hover:neu-raised-sm"
-                        } ${meeting.isConfirmed ? "cursor-default" : "cursor-pointer"}`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                              isConfirmed
-                                ? "bg-success/20 neu-inset-sm"
-                                : isTop
-                                ? "bg-base neu-deep"
-                                : "bg-base neu-inset-sm"
-                            }`}
-                          >
-                            <span className={`font-display text-sm font-bold ${
-                              isConfirmed ? "text-success" : isTop ? "text-accent" : "text-muted"
-                            }`}>
-                              {index + 1}
-                            </span>
+                      <div key={slotKey}>
+                        <button
+                          onClick={() => !meeting.isConfirmed && setSelectedSlot(isSelected ? null : slot)}
+                          className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all duration-300 text-left ${
+                            isConfirmed
+                              ? "bg-success/10 neu-raised-sm cursor-default"
+                              : isSelected
+                              ? "bg-base neu-deep cursor-pointer"
+                              : isTop
+                              ? "bg-base neu-raised-sm hover:-translate-y-0.5 cursor-pointer"
+                              : "bg-base neu-inset-sm cursor-pointer"
+                          }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div
+                              className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                                isConfirmed ? "bg-success/20 neu-inset-sm" : isTop ? "bg-base neu-deep" : "bg-base neu-inset-sm"
+                              }`}
+                            >
+                              <span className={`font-display text-sm font-bold ${
+                                isConfirmed ? "text-success" : isTop ? "text-accent" : "text-muted"
+                              }`}>
+                                {index + 1}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-fore">{formatDateShort(slot.date)}</p>
+                              <p className="text-xs text-muted font-display mt-0.5">{formatSlotLabel(slot.timeSlot)}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-semibold text-fore">
-                              {formatDateShort(slot.date)}
-                            </p>
-                            <p className="text-xs text-muted font-display mt-0.5">
-                              {formatSlotLabel(slot.timeSlot)}
-                            </p>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <p className={`text-sm font-bold font-display ${isConfirmed ? "text-success" : "text-accent"}`}>
+                                {slot.availableCount}명
+                              </p>
+                              <p className="text-xs text-muted">/{meeting.totalParticipants}명</p>
+                            </div>
+                            {!meeting.isConfirmed && (
+                              <div className="text-muted">
+                                {isSelected ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <p className={`text-sm font-bold font-display ${
-                            isConfirmed ? "text-success" : "text-accent"
-                          }`}>
-                            {slot.availableCount}명
-                          </p>
-                          <p className="text-xs text-muted">/{meeting.totalParticipants}명</p>
-                        </div>
-                      </button>
+                        </button>
+
+                        {/* Expanded: available people + confirm button */}
+                        {isSelected && !meeting.isConfirmed && (
+                          <div className="mt-1 mb-1 bg-base neu-deep rounded-2xl p-4">
+                            <p className="text-xs font-semibold text-accent uppercase tracking-wide mb-3">
+                              참석 가능 ({availablePeople.length}명)
+                            </p>
+                            {availablePeople.length === 0 ? (
+                              <p className="text-xs text-muted">이 시간에 가능한 사람이 없습니다.</p>
+                            ) : (
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {availablePeople.map((p) => (
+                                  <div key={p.id} className="flex items-center gap-1.5 bg-base neu-raised-sm rounded-full px-3 py-1.5">
+                                    <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                                      style={{ background: "linear-gradient(135deg, #6C63FF, #8B84FF)" }}>
+                                      <span className="text-white text-[10px] font-bold">{p.name[0]}</span>
+                                    </div>
+                                    <span className="text-xs font-semibold text-fore">{p.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {confirmError && (
+                              <p className="text-xs text-muted mb-2">⚠ {confirmError}</p>
+                            )}
+                            <button
+                              onClick={handleConfirm}
+                              disabled={confirming}
+                              className="neu-btn neu-btn-primary w-full py-3 text-sm"
+                            >
+                              <CheckCircle size={15} strokeWidth={2} />
+                              {confirming ? "확정 중..." : "이 시간으로 확정하기"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -465,25 +502,6 @@ export default function ManagePage() {
                     {showAllSlots ? "접기" : `더보기 (${meeting.optimalSlots.length - 5}개)`}
                   </button>
                 )}
-
-                {!meeting.isConfirmed && selectedSlot && (
-                  <div className="mt-5 pt-5 border-t border-base/50">
-                    {confirmError && (
-                      <p className="text-sm text-muted mb-3">⚠ {confirmError}</p>
-                    )}
-                    <button
-                      onClick={handleConfirm}
-                      disabled={confirming}
-                      className="neu-btn neu-btn-primary w-full py-4 text-sm"
-                    >
-                      <CheckCircle size={16} strokeWidth={2} />
-                      {confirming ? "확정 중..." : "이 시간으로 확정"}
-                    </button>
-                    <p className="text-xs text-muted text-center mt-2">
-                      {formatDateShort(selectedSlot.date)} · {formatSlotLabel(selectedSlot.timeSlot)}
-                    </p>
-                  </div>
-                )}
               </>
             )}
           </div>
@@ -495,16 +513,14 @@ export default function ManagePage() {
                 <Users size={18} strokeWidth={1.5} className="text-accent" />
                 응답 현황 ({meeting.totalParticipants}명)
               </h2>
-              {/* Tab track — inset pill */}
+              {/* Tab track */}
               <div className="bg-base neu-deep rounded-2xl p-1 flex">
                 {(["person", "time"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setViewTab(tab)}
                     className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all duration-300 ${
-                      viewTab === tab
-                        ? "bg-base neu-raised-sm text-fore"
-                        : "text-muted hover:text-fore"
+                      viewTab === tab ? "bg-base neu-raised-sm text-fore" : "text-muted hover:text-fore"
                     }`}
                   >
                     {tab === "person" ? "사람별" : "시간별"}
@@ -519,40 +535,74 @@ export default function ManagePage() {
               </div>
             ) : viewTab === "person" ? (
               <div className="space-y-3">
+                <p className="text-xs text-muted mb-4">사람을 누르면 가능한 시간을 볼 수 있어요</p>
                 {meeting.participants.map((p) => {
-                  const grouped = p.unavailableSlots.reduce<Record<string, string[]>>((acc, s) => {
-                    if (!acc[s.date]) acc[s.date] = [];
-                    acc[s.date].push(s.timeSlot);
-                    return acc;
-                  }, {});
-                  const sortedDates = Object.keys(grouped).sort();
+                  const isExpanded = expandedPersonId === p.id;
+                  const dates = getDateRange(meeting.startDate, meeting.endDate);
+                  const unavailSet = new Set(p.unavailableSlots.map((s) => `${s.date}-${s.timeSlot}`));
+
+                  // Group available slots by date
+                  const availByDate: Record<string, number[]> = {};
+                  for (const date of dates) {
+                    const availHours = HOURS_ALL.filter((h) => !unavailSet.has(`${date}-${String(h)}`));
+                    if (availHours.length > 0) availByDate[date] = availHours;
+                  }
+                  const availDates = Object.keys(availByDate).sort();
+                  const totalAvail = Object.values(availByDate).reduce((s, v) => s + v.length, 0);
 
                   return (
-                    <div key={p.id} className="bg-base neu-inset-sm rounded-2xl p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-base neu-raised-sm flex items-center justify-center">
-                            <span className="text-xs font-bold text-accent">
-                              {p.name[0]}
-                            </span>
-                          </div>
-                          <span className="text-sm font-semibold text-fore">{p.name}</span>
-                          <span className="text-xs text-muted">{p.phone}</span>
-                        </div>
-                        <span className="text-xs text-muted">
-                          불가 {p.unavailableSlots.length}시간
-                        </span>
-                      </div>
-                      {sortedDates.length === 0 ? (
-                        <p className="text-xs text-success font-medium">모든 시간 가능</p>
-                      ) : (
-                        <div className="space-y-1 mt-2">
-                          {sortedDates.map((date) => (
-                            <div key={date} className="text-xs text-muted">
-                              <span className="text-fore font-medium">{formatDateShort(date)}:</span>{" "}
-                              {grouped[date].map(Number).sort((a, b) => a - b).map((h) => `${h}:00`).join(", ")}
+                    <div key={p.id}>
+                      <button
+                        onClick={() => setExpandedPersonId(isExpanded ? null : p.id)}
+                        className={`w-full bg-base rounded-2xl p-4 transition-all duration-300 text-left ${
+                          isExpanded ? "neu-deep" : "neu-inset-sm hover:-translate-y-0.5"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                              style={{ background: "linear-gradient(135deg, #6C63FF, #8B84FF)" }}>
+                              <span className="text-white text-xs font-bold">{p.name[0]}</span>
                             </div>
-                          ))}
+                            <div>
+                              <span className="text-sm font-semibold text-fore">{p.name}</span>
+                              <span className="text-xs text-muted ml-2">{p.phone}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-accent font-semibold">가능 {totalAvail}시간</span>
+                            {isExpanded ? <ChevronUp size={14} className="text-muted" /> : <ChevronDown size={14} className="text-muted" />}
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Expanded: available times */}
+                      {isExpanded && (
+                        <div className="mt-1 bg-base neu-deep rounded-2xl p-4">
+                          <p className="text-xs font-semibold text-accent uppercase tracking-wide mb-3">
+                            가능한 시간
+                          </p>
+                          {availDates.length === 0 ? (
+                            <p className="text-xs text-muted">가능한 시간이 없습니다.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {availDates.map((date) => (
+                                <div key={date}>
+                                  <p className="text-xs font-semibold text-fore mb-1.5">{formatDateShort(date)}</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {availByDate[date].map((h) => (
+                                      <span
+                                        key={h}
+                                        className="bg-base neu-raised-sm rounded-xl px-2.5 py-1 text-xs font-display font-semibold text-fore tabular-nums"
+                                      >
+                                        {h}:00
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
