@@ -87,6 +87,7 @@ export default function ManagePage() {
   const [showAllSlots, setShowAllSlots] = useState(false);
   const [viewTab, setViewTab] = useState<"person" | "time">("person");
   const [timeViewDate, setTimeViewDate] = useState("");
+  const [sharedConfirm, setSharedConfirm] = useState(false);
 
   const fetchMeeting = useCallback(async () => {
     try {
@@ -114,6 +115,31 @@ export default function ManagePage() {
     typeof window !== "undefined" && meeting
       ? `${window.location.origin}/invite/${meeting.token}`
       : "";
+
+  const handleShareConfirm = async () => {
+    if (!meeting?.confirmedDate || !meeting?.confirmedSlot) return;
+    const text = `📅 약속이 확정되었습니다!\n\n${meeting.title}\n${formatDate(meeting.confirmedDate)} ${formatSlotLabel(meeting.confirmedSlot)}\n\n${inviteLink}`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: meeting.title, text });
+        return;
+      } catch {
+        // fall through to clipboard
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setSharedConfirm(true);
+    setTimeout(() => setSharedConfirm(false), 2000);
+  };
 
   const handleCopyLink = async () => {
     if (!inviteLink) return;
@@ -242,14 +268,28 @@ export default function ManagePage() {
 
           {meeting.isConfirmed && meeting.confirmedDate && meeting.confirmedSlot && (
             <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4">
-              <div className="flex items-center gap-2 text-green-700">
-                <CheckCircle className="w-5 h-5" />
-                <span className="font-semibold">약속 확정</span>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 text-green-700">
+                    <CheckCircle className="w-5 h-5" />
+                    <span className="font-semibold">약속 확정</span>
+                  </div>
+                  <p className="text-green-800 mt-1 font-medium">
+                    {formatDateShort(meeting.confirmedDate)} ·{" "}
+                    {formatSlotLabel(meeting.confirmedSlot)}
+                  </p>
+                </div>
+                <button
+                  onClick={handleShareConfirm}
+                  className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors"
+                >
+                  {sharedConfirm ? (
+                    <><CheckCircle className="w-4 h-4" /> 복사됨</>
+                  ) : (
+                    <><Copy className="w-4 h-4" /> 공유하기</>
+                  )}
+                </button>
               </div>
-              <p className="text-green-800 mt-1">
-                {formatDateShort(meeting.confirmedDate)} ·{" "}
-                {formatSlotLabel(meeting.confirmedSlot)}
-              </p>
             </div>
           )}
         </div>
