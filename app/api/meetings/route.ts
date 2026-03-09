@@ -39,15 +39,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const participant = await prisma.participant.create({
-      data: {
-        meetingId: meeting.id,
-        name,
-        phone: normalizedPhone,
-      },
-    });
-
-    return NextResponse.json({ id: meeting.id, token: meeting.token, editToken: participant.editToken });
+    return NextResponse.json({ id: meeting.id, token: meeting.token });
   } catch (error) {
     console.error("Error creating meeting:", error);
     return NextResponse.json(

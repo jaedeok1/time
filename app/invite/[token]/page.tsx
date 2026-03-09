@@ -112,11 +112,22 @@ export default function InvitePage() {
 
   useEffect(() => {
     if (token) {
-      const stored = localStorage.getItem(`editToken-${token}`);
-      if (stored) {
-        setEditToken(stored);
+      // Check for existing edit token (returning respondent)
+      const storedEdit = localStorage.getItem(`editToken-${token}`);
+      if (storedEdit) {
+        setEditToken(storedEdit);
         setIsEditing(true);
         setStep(2);
+        return;
+      }
+      // Pre-fill name/phone if creator is responding for the first time
+      const storedCreator = localStorage.getItem(`creator-${token}`);
+      if (storedCreator) {
+        try {
+          const { name: cName, phone: cPhone } = JSON.parse(storedCreator);
+          setName(cName || "");
+          setPhone(cPhone || "");
+        } catch {}
       }
     }
   }, [token]);

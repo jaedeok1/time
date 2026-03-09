@@ -254,9 +254,12 @@ export default function NewMeetingPage() {
       }
 
       try {
-        // Store creator's editToken so they can fill their availability via invite link
-        if (data.editToken && data.token) {
-          localStorage.setItem(`editToken-${data.token}`, data.editToken);
+        // Store creator's name/phone for pre-filling invite page
+        if (data.token) {
+          localStorage.setItem(`creator-${data.token}`, JSON.stringify({
+            name: formData.name.trim(),
+            phone: formData.phone.trim(),
+          }));
         }
         const stored = JSON.parse(localStorage.getItem("my-created-meetings") || "[]");
         stored.unshift({ id: data.id, title: formData.title.trim(), createdAt: new Date().toISOString() });
