@@ -288,10 +288,10 @@ export default function ManagePage() {
             className="mt-3 flex items-center justify-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-medium px-4 py-2.5 rounded-xl text-sm transition-colors"
           >
             <Calendar className="w-4 h-4" />
-            내 가용시간 입력하기
+            나도 응답하기
           </Link>
           <p className="text-xs text-gray-500 mt-1 text-center">
-            주최자도 본인의 가능한 시간을 직접 입력할 수 있습니다.
+            주최자도 불가능한 시간을 직접 응답할 수 있습니다.
           </p>
         </div>
 
