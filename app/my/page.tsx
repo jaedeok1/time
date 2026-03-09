@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Clock, Calendar, Users, ArrowLeft, Trash2, ExternalLink } from "lucide-react";
+import { Trash2, ExternalLink } from "lucide-react";
 
 interface CreatedMeeting {
   id: string;
@@ -53,127 +53,142 @@ export default function MyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href="/" className="text-gray-400 hover:text-gray-600 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+    <div className="min-h-screen bg-white text-black">
+      {/* Header */}
+      <header className="border-b border-black">
+        <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link
+            href="/"
+            className="font-display text-lg font-bold tracking-widest uppercase hover:opacity-60 transition-opacity duration-100"
+          >
+            시간조율
           </Link>
-          <Clock className="w-5 h-5 text-indigo-600" />
-          <span className="text-lg font-bold text-indigo-700">시간 조율</span>
+          <Link
+            href="/"
+            className="font-mono text-xs tracking-widest uppercase border-b border-transparent hover:border-black transition-all duration-100 pb-0.5"
+          >
+            ← 홈
+          </Link>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">내 모임</h1>
+      <main className="max-w-2xl mx-auto px-6 py-12">
+        {/* Page title */}
+        <div className="mb-12">
+          <p className="font-mono text-xs tracking-widest uppercase text-dim mb-3">History</p>
+          <h1 className="font-serif text-4xl font-bold tracking-tight">내 약속</h1>
+          <div className="h-[3px] bg-black mt-4" />
+        </div>
 
         {/* Created meetings */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-lg font-bold text-gray-900">내가 만든 모임</h2>
-            <span className="text-xs text-gray-400 ml-auto">{created.length}개</span>
+        <section className="mb-12">
+          <div className="flex items-baseline justify-between mb-6">
+            <p className="font-mono text-xs tracking-widest uppercase text-dim">
+              01 — 내가 만든 약속
+            </p>
+            <span className="font-mono text-xs text-dim tabular-nums">{created.length}개</span>
           </div>
 
           {created.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-400 text-sm mb-3">만든 모임이 없습니다.</p>
+            <div className="border border-black p-10 text-center">
+              <p className="font-mono text-sm text-dim mb-6">만든 약속이 없습니다.</p>
               <Link
                 href="/meetings/new"
-                className="text-indigo-600 text-sm font-medium hover:underline"
+                className="font-mono text-xs tracking-widest uppercase border-b border-black pb-0.5 hover:opacity-60 transition-opacity duration-100"
               >
-                새 모임 만들기 →
+                새 약속 만들기 →
               </Link>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="divide-y divide-[#e5e5e5] border-y border-black">
               {created.map((m) => (
                 <div
                   key={m.id}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 transition-colors group"
+                  className="flex items-center justify-between py-4 group hover:bg-muted transition-colors duration-100 px-4 -mx-4"
                 >
-                  <Link
-                    href={`/meetings/${m.id}/manage`}
-                    className="flex-1 min-w-0"
-                  >
-                    <p className="font-medium text-gray-900 truncate">{m.title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{formatRelative(m.createdAt)} 생성</p>
+                  <Link href={`/meetings/${m.id}/manage`} className="flex-1 min-w-0">
+                    <p className="font-serif font-bold truncate">{m.title}</p>
+                    <p className="font-mono text-xs text-dim mt-0.5">
+                      {formatRelative(m.createdAt)} 생성
+                    </p>
                   </Link>
-                  <div className="flex items-center gap-2 ml-3 shrink-0">
+                  <div className="flex items-center gap-4 ml-4 shrink-0">
                     <Link
                       href={`/meetings/${m.id}/manage`}
-                      className="flex items-center gap-1 text-xs text-indigo-600 font-medium hover:underline"
+                      className="font-mono text-xs tracking-widest uppercase border-b border-transparent hover:border-black transition-all duration-100 pb-0.5 flex items-center gap-1"
                     >
-                      관리 <ExternalLink className="w-3 h-3" />
+                      관리 <ExternalLink className="w-3 h-3" strokeWidth={1.5} />
                     </Link>
                     <button
                       onClick={() => removeCreated(m.id)}
-                      className="text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                      className="text-[#e5e5e5] hover:text-black transition-colors duration-100 opacity-0 group-hover:opacity-100"
                       title="목록에서 제거"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                     </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
+
+        <div className="h-[3px] bg-black mb-12" />
 
         {/* Responded meetings */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Users className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-bold text-gray-900">내가 응답한 모임</h2>
-            <span className="text-xs text-gray-400 ml-auto">{responded.length}개</span>
+        <section>
+          <div className="flex items-baseline justify-between mb-6">
+            <p className="font-mono text-xs tracking-widest uppercase text-dim">
+              02 — 내가 응답한 약속
+            </p>
+            <span className="font-mono text-xs text-dim tabular-nums">{responded.length}개</span>
           </div>
 
           {responded.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-400 text-sm">응답한 모임이 없습니다.</p>
+            <div className="border border-black p-10 text-center">
+              <p className="font-mono text-sm text-dim">응답한 약속이 없습니다.</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="divide-y divide-[#e5e5e5] border-y border-black">
               {responded.map((m) => (
                 <div
                   key={m.token}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-colors group"
+                  className="flex items-center justify-between py-4 group hover:bg-muted transition-colors duration-100 px-4 -mx-4"
                 >
-                  <Link
-                    href={`/meetings/${m.meetingId}/manage`}
-                    className="flex-1 min-w-0"
-                  >
-                    <p className="font-medium text-gray-900 truncate">{m.title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{formatRelative(m.respondedAt)} 응답</p>
+                  <Link href={`/meetings/${m.meetingId}/manage`} className="flex-1 min-w-0">
+                    <p className="font-serif font-bold truncate">{m.title}</p>
+                    <p className="font-mono text-xs text-dim mt-0.5">
+                      {formatRelative(m.respondedAt)} 응답
+                    </p>
                   </Link>
-                  <div className="flex items-center gap-2 ml-3 shrink-0">
+                  <div className="flex items-center gap-4 ml-4 shrink-0">
                     <Link
                       href={`/meetings/${m.meetingId}/manage`}
-                      className="flex items-center gap-1 text-xs text-blue-600 font-medium hover:underline"
+                      className="font-mono text-xs tracking-widest uppercase border-b border-transparent hover:border-black transition-all duration-100 pb-0.5 flex items-center gap-1"
                     >
-                      결과 보기 <ExternalLink className="w-3 h-3" />
+                      결과 <ExternalLink className="w-3 h-3" strokeWidth={1.5} />
                     </Link>
                     <Link
                       href={`/invite/${m.token}`}
-                      className="flex items-center gap-1 text-xs text-gray-500 font-medium hover:underline"
+                      className="font-mono text-xs tracking-widest uppercase border-b border-transparent hover:border-black transition-all duration-100 pb-0.5"
                     >
                       수정
                     </Link>
                     <button
                       onClick={() => removeResponded(m.token)}
-                      className="text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                      className="text-[#e5e5e5] hover:text-black transition-colors duration-100 opacity-0 group-hover:opacity-100"
                       title="목록에서 제거"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                     </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        <p className="text-xs text-gray-400 text-center">
+        <p className="font-mono text-xs text-dim text-center mt-12">
           이 목록은 이 기기의 브라우저에만 저장됩니다.
         </p>
       </main>

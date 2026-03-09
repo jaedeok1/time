@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Clock, ArrowLeft, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 function getToday(): string {
   const d = new Date();
@@ -81,17 +81,25 @@ function DateRangePicker({
   ];
 
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden">
+    <div className="border border-black">
       {/* Month nav */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
-        <button type="button" onClick={prevMonth} className="p-1 hover:bg-gray-200 rounded transition-colors">
-          <ChevronLeft className="w-5 h-5 text-gray-600" />
+      <div className="flex items-center justify-between px-4 py-3 border-b border-black">
+        <button
+          type="button"
+          onClick={prevMonth}
+          className="p-1 hover:bg-black hover:text-white transition-colors duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+        >
+          <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="text-sm font-semibold text-gray-800">
-          {viewYear}년 {MONTHS[viewMonth]}
+        <span className="font-mono text-sm tracking-widest">
+          {viewYear}.{String(viewMonth + 1).padStart(2, "0")}
         </span>
-        <button type="button" onClick={nextMonth} className="p-1 hover:bg-gray-200 rounded transition-colors">
-          <ChevronRight className="w-5 h-5 text-gray-600" />
+        <button
+          type="button"
+          onClick={nextMonth}
+          className="p-1 hover:bg-black hover:text-white transition-colors duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+        >
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
@@ -101,8 +109,8 @@ function DateRangePicker({
           {WEEKDAYS.map((w, i) => (
             <div
               key={w}
-              className={`text-center text-xs font-medium py-1 ${
-                i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : "text-gray-500"
+              className={`text-center font-mono text-xs py-1 tracking-widest ${
+                i === 0 ? "text-dim" : i === 6 ? "text-dim" : "text-dim"
               }`}
             >
               {w}
@@ -121,19 +129,16 @@ function DateRangePicker({
             const isEnd = ymd === endDate;
             const isPreviewEnd = phase === "end" && ymd === previewEnd && !isEnd;
             const inRange = !!(startDate && previewEnd && ymd > startDate && ymd < previewEnd);
-            const dow = idx % 7;
-            const isSun = dow === 0;
-            const isSat = dow === 6;
 
-            let spanClass = "";
+            let cellClass = "";
             if (isStart || isEnd) {
-              spanClass = "bg-indigo-600 text-white";
+              cellClass = "bg-black text-white";
             } else if (isPreviewEnd) {
-              spanClass = "bg-indigo-300 text-white";
+              cellClass = "bg-black/30 text-black";
             } else if (inRange) {
-              spanClass = "bg-indigo-100 text-indigo-700";
+              cellClass = "bg-black/10 text-black";
             } else if (!isPast) {
-              spanClass = `hover:bg-gray-100 ${isSun ? "text-red-500" : isSat ? "text-blue-500" : "text-gray-700"}`;
+              cellClass = "hover:bg-black/10";
             }
 
             return (
@@ -145,9 +150,9 @@ function DateRangePicker({
                 onMouseLeave={() => setHoverDate("")}
               >
                 <span
-                  className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium select-none transition-colors ${
-                    isPast ? "text-gray-300" : ""
-                  } ${spanClass}`}
+                  className={`w-8 h-8 flex items-center justify-center font-mono text-sm select-none transition-colors duration-100 ${
+                    isPast ? "text-black/20" : ""
+                  } ${cellClass}`}
                 >
                   {day}
                 </span>
@@ -158,20 +163,20 @@ function DateRangePicker({
       </div>
 
       {/* Status bar */}
-      <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 text-xs min-h-[36px] flex items-center justify-between">
+      <div className="px-4 py-2.5 border-t border-black text-xs font-mono min-h-[36px] flex items-center justify-between">
         {!startDate ? (
-          <span className="text-indigo-600 font-medium">시작일을 선택하세요</span>
+          <span className="tracking-wide">시작일을 선택하세요</span>
         ) : !endDate ? (
-          <span className="text-indigo-600 font-medium">종료일을 선택하세요</span>
+          <span className="tracking-wide">종료일을 선택하세요</span>
         ) : (
           <>
-            <span className="text-gray-700 font-medium">
-              {formatShort(startDate)} ~ {formatShort(endDate)}
+            <span>
+              {formatShort(startDate)} — {formatShort(endDate)}
             </span>
             <button
               type="button"
               onClick={() => { onRangeChange("", ""); setPhase("start"); }}
-              className="text-gray-400 hover:text-gray-600 underline ml-2"
+              className="underline hover:no-underline ml-2 text-dim"
             >
               초기화
             </button>
@@ -254,7 +259,6 @@ export default function NewMeetingPage() {
       }
 
       try {
-        // Store creator's name/phone for pre-filling invite page
         if (data.token) {
           localStorage.setItem(`creator-${data.token}`, JSON.stringify({
             name: formData.name.trim(),
@@ -275,39 +279,54 @@ export default function NewMeetingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href="/" className="text-gray-400 hover:text-gray-600 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+    <div className="min-h-screen bg-white text-black">
+      {/* Header */}
+      <header className="border-b border-black">
+        <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link
+            href="/"
+            className="font-display text-lg font-bold tracking-widest uppercase hover:opacity-60 transition-opacity duration-100"
+          >
+            시간조율
           </Link>
-          <Clock className="w-5 h-5 text-indigo-600" />
-          <span className="text-lg font-bold text-indigo-700">시간 조율</span>
+          <Link
+            href="/"
+            className="font-mono text-xs tracking-widest uppercase border-b border-transparent hover:border-black transition-all duration-100 pb-0.5"
+          >
+            ← 홈
+          </Link>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-indigo-100 rounded-full p-2">
-              <Calendar className="w-6 h-6 text-indigo-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">새 약속 잡기</h1>
+      <main className="max-w-2xl mx-auto px-6 py-12">
+        {/* Page title */}
+        <div className="mb-10">
+          <p className="font-mono text-xs tracking-widest uppercase text-dim mb-3">
+            New Event
+          </p>
+          <h1 className="font-serif text-4xl font-bold tracking-tight">
+            새 약속 잡기
+          </h1>
+          <div className="h-[3px] bg-black mt-4" />
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="border-l-4 border-black bg-muted px-5 py-3 mb-8">
+            <p className="text-sm font-mono">⚠ {error}</p>
           </div>
+        )}
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Organizer info */}
-            <div className="border border-gray-200 rounded-xl p-4 space-y-4">
-              <p className="text-sm font-semibold text-gray-700">주최자 정보</p>
+        <form onSubmit={handleSubmit} className="space-y-10">
+          {/* Section: 주최자 */}
+          <div>
+            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-6">
+              01 — 주최자 정보
+            </p>
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  이름 <span className="text-red-500">*</span>
+                <label className="block font-mono text-xs tracking-widest uppercase mb-3">
+                  이름 <span className="text-dim">*</span>
                 </label>
                 <input
                   type="text"
@@ -315,12 +334,12 @@ export default function NewMeetingPage() {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="홍길동"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full border-b-2 border-black bg-transparent py-3 text-base placeholder:text-dim/50 focus:outline-none focus:border-b-4 transition-all duration-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  전화번호 <span className="text-red-500">*</span>
+                <label className="block font-mono text-xs tracking-widest uppercase mb-3">
+                  전화번호 <span className="text-dim">*</span>
                 </label>
                 <input
                   type="tel"
@@ -328,81 +347,94 @@ export default function NewMeetingPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="01012345678"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full border-b-2 border-black bg-transparent py-3 text-base placeholder:text-dim/50 focus:outline-none focus:border-b-4 transition-all duration-100 font-mono"
                 />
               </div>
             </div>
+          </div>
 
-            {/* Meeting title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                약속 이름 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                placeholder="예: 팀 회식, 스터디, 동창 모임"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
+          <div className="h-px bg-subtle" />
+
+          {/* Section: 약속 정보 */}
+          <div>
+            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-6">
+              02 — 약속 정보
+            </p>
+            <div className="space-y-6">
+              <div>
+                <label className="block font-mono text-xs tracking-widest uppercase mb-3">
+                  약속 이름 <span className="text-dim">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="예: 팀 회식, 스터디, 동창 모임"
+                  className="w-full border-b-2 border-black bg-transparent py-3 text-base placeholder:text-dim/50 focus:outline-none focus:border-b-4 transition-all duration-100"
+                />
+              </div>
+              <div>
+                <label className="block font-mono text-xs tracking-widest uppercase mb-3">
+                  약속 설명 <span className="text-dim">(선택)</span>
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="모임에 대한 간단한 설명을 입력하세요"
+                  rows={3}
+                  className="w-full border-b-2 border-black bg-transparent py-3 text-base placeholder:text-dim/50 focus:outline-none focus:border-b-4 transition-all duration-100 resize-none"
+                />
+              </div>
             </div>
+          </div>
 
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                약속 설명 <span className="text-gray-400">(선택)</span>
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="모임에 대한 간단한 설명을 입력하세요"
-                rows={3}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-              />
-            </div>
+          <div className="h-px bg-subtle" />
 
-            {/* Date range picker */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                약속 기간 <span className="text-red-500">*</span>
-              </label>
-              <DateRangePicker
-                startDate={formData.startDate}
-                endDate={formData.endDate}
-                onRangeChange={handleRangeChange}
-                minDate={today}
-              />
-            </div>
+          {/* Section: 기간 */}
+          <div>
+            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-6">
+              03 — 약속 기간 <span className="text-black">*</span>
+            </p>
+            <DateRangePicker
+              startDate={formData.startDate}
+              endDate={formData.endDate}
+              onRangeChange={handleRangeChange}
+              minDate={today}
+            />
+          </div>
 
-            {/* Deadline */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                응답 마감일 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                name="deadline"
-                value={formData.deadline}
-                onChange={handleChange}
-                min={today}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                이 날짜까지 참가자들이 응답할 수 있습니다.
-              </p>
-            </div>
+          <div className="h-px bg-subtle" />
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-semibold py-3 rounded-xl transition-colors"
-            >
-              {loading ? "생성 중..." : "약속 잡기"}
-            </button>
-          </form>
-        </div>
+          {/* Section: 마감일 */}
+          <div>
+            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-6">
+              04 — 응답 마감일 <span className="text-black">*</span>
+            </p>
+            <input
+              type="date"
+              name="deadline"
+              value={formData.deadline}
+              onChange={handleChange}
+              min={today}
+              className="w-full border-b-2 border-black bg-transparent py-3 text-base focus:outline-none focus:border-b-4 transition-all duration-100 font-mono"
+            />
+            <p className="font-mono text-xs text-dim mt-3 tracking-wide">
+              이 날짜까지 참가자들이 응답할 수 있습니다.
+            </p>
+          </div>
+
+          <div className="h-[3px] bg-black" />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-black text-white py-4 text-sm font-bold tracking-widest uppercase hover:bg-white hover:text-black border-2 border-black transition-colors duration-100 disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:outline-offset-2"
+          >
+            {loading ? "생성 중..." : "약속 잡기 →"}
+          </button>
+        </form>
       </main>
     </div>
   );
