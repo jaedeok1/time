@@ -25,9 +25,7 @@ interface UnavailableSlot {
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const WEEKDAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
 
-function slotKey(date: string, hour: number) {
-  return `${date}|${hour}`;
-}
+function slotKey(date: string, hour: number) { return `${date}|${hour}`; }
 
 function toLocalDate(dateStr: string): Date {
   return new Date(dateStr.split("T")[0] + "T00:00:00");
@@ -48,20 +46,14 @@ function getDateRange(startDate: string, endDate: string): string[] {
 }
 
 function formatDateShort(dateStr: string): string {
-  return toLocalDate(dateStr).toLocaleDateString("ko-KR", {
-    month: "long", day: "numeric", weekday: "short",
-  });
+  return toLocalDate(dateStr).toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" });
 }
 
 function formatDate(dateStr: string): string {
-  return toLocalDate(dateStr).toLocaleDateString("ko-KR", {
-    year: "numeric", month: "long", day: "numeric", weekday: "short",
-  });
+  return toLocalDate(dateStr).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "short" });
 }
 
 function formatHour(h: number) { return `${h}:00`; }
-
-/* ─── HourlyDragGrid ─────────────────────────────────────── */
 
 const TIME_GROUPS = [
   { label: "새벽", hours: [0, 1, 2, 3, 4, 5] },
@@ -71,9 +63,7 @@ const TIME_GROUPS = [
 ];
 
 function HourlyDragGrid({
-  dates,
-  unavailableSlots,
-  setUnavailableSlots,
+  dates, unavailableSlots, setUnavailableSlots,
 }: {
   dates: string[];
   unavailableSlots: Set<string>;
@@ -82,15 +72,13 @@ function HourlyDragGrid({
   const [activeDate, setActiveDate] = useState(dates[0] || "");
   const dragRef = useRef<{ active: boolean; paintValue: boolean } | null>(null);
 
-  const isUnavailable = (date: string, hour: number) =>
-    unavailableSlots.has(slotKey(date, hour));
+  const isUnavailable = (date: string, hour: number) => unavailableSlots.has(slotKey(date, hour));
 
   const applySlot = (key: string, value: boolean) => {
     setUnavailableSlots((prev) => {
       if (prev.has(key) === value) return prev;
       const next = new Set(prev);
-      if (value) next.add(key);
-      else next.delete(key);
+      if (value) next.add(key); else next.delete(key);
       return next;
     });
   };
@@ -123,45 +111,32 @@ function HourlyDragGrid({
       const next = new Set(prev);
       HOURS.forEach((h) => {
         const key = slotKey(date, h);
-        if (allSelected) next.delete(key);
-        else next.add(key);
+        if (allSelected) next.delete(key); else next.add(key);
       });
       return next;
     });
   };
 
-  const countForDate = (date: string) =>
-    HOURS.filter((h) => isUnavailable(date, h)).length;
-
+  const countForDate = (date: string) => HOURS.filter((h) => isUnavailable(date, h)).length;
   const allDaySelected = HOURS.every((h) => isUnavailable(activeDate, h));
 
   return (
     <div>
-      {/* Date tab track — inset pill container */}
-      <div className="bg-base neu-deep rounded-2xl p-1.5 flex gap-1 overflow-x-auto mb-5">
+      {/* Date tab track */}
+      <div className="neu-deep rounded-2xl p-1.5 flex gap-1 overflow-x-auto mb-5">
         {dates.map((date) => {
           const d = new Date(date + "T00:00:00");
           const count = countForDate(date);
           const isActive = date === activeDate;
           return (
-            <button
-              key={date}
-              type="button"
-              onClick={() => setActiveDate(date)}
-              className={`shrink-0 flex flex-col items-center px-4 py-2.5 rounded-xl transition-all duration-300 min-w-[56px] ${
-                isActive
-                  ? "bg-base neu-raised-sm text-fore"
-                  : "text-muted hover:text-fore"
-              }`}
-            >
+            <button key={date} type="button" onClick={() => setActiveDate(date)}
+              className={`shrink-0 flex flex-col items-center px-4 py-2.5 rounded-xl transition-all duration-200 min-w-[56px] ${
+                isActive ? "neu-raised-sm text-fore" : "text-muted hover:text-fore"
+              }`}>
               <span className="text-xs font-medium">{WEEKDAY_NAMES[d.getDay()]}</span>
-              <span className="text-sm font-bold tabular-nums">
-                {d.getMonth() + 1}/{d.getDate()}
-              </span>
+              <span className="text-sm font-bold tabular-nums">{d.getMonth() + 1}/{d.getDate()}</span>
               {count > 0 && (
-                <span className={`text-xs mt-0.5 font-display font-semibold ${
-                  isActive ? "text-accent" : "text-muted"
-                }`}>
+                <span className={`text-xs mt-0.5 font-display font-semibold ${isActive ? "text-accent" : "text-muted"}`}>
                   {count}
                 </span>
               )}
@@ -177,22 +152,15 @@ function HourlyDragGrid({
             ? "탭하거나 드래그해서 불가 시간 선택"
             : `${countForDate(activeDate)}시간 불가로 표시됨`}
         </p>
-        <button
-          type="button"
-          onClick={() => toggleAllDay(activeDate)}
-          className="neu-btn neu-btn-secondary px-4 py-2 text-xs"
-        >
+        <button type="button" onClick={() => toggleAllDay(activeDate)}
+          className="neu-btn neu-btn-secondary px-4 py-2 text-xs">
           {allDaySelected ? "전체 해제" : "하루 전체"}
         </button>
       </div>
 
-      {/* Tactile hour grid — drag enabled */}
-      <div
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        style={{ touchAction: "none" }}
-      >
+      {/* Hour grid */}
+      <div onPointerDown={handlePointerDown} onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp} style={{ touchAction: "none" }}>
         {TIME_GROUPS.map((group) => (
           <div key={group.label} className="mb-4">
             <p className="text-xs font-display font-semibold text-muted uppercase tracking-widest mb-2 px-1">
@@ -206,10 +174,8 @@ function HourlyDragGrid({
                   <div
                     key={hour}
                     data-slot-key={key}
-                    className={`flex items-center justify-between px-4 py-3.5 rounded-2xl select-none cursor-pointer transition-all duration-300 ${
-                      unavail
-                        ? "bg-base neu-deep"
-                        : "bg-base neu-raised-sm"
+                    className={`flex items-center justify-between px-4 py-3.5 rounded-2xl select-none cursor-pointer transition-all duration-200 ${
+                      unavail ? "neu-slot-unavail" : "neu-slot-avail"
                     }`}
                   >
                     <span className={`text-sm font-semibold pointer-events-none tabular-nums ${
@@ -218,7 +184,7 @@ function HourlyDragGrid({
                       {hour}:00
                     </span>
                     <span className={`text-xs font-semibold pointer-events-none ${
-                      unavail ? "text-accent" : "text-muted"
+                      unavail ? "text-accent/70" : "text-muted"
                     }`}>
                       {unavail ? "불가" : "가능"}
                     </span>
@@ -232,8 +198,6 @@ function HourlyDragGrid({
     </div>
   );
 }
-
-/* ─── Main page ──────────────────────────────────────────── */
 
 export default function InvitePage() {
   const params = useParams();
@@ -349,12 +313,13 @@ export default function InvitePage() {
     setIsEditing(true); setSubmitted(false); setStep(2); setUnavailableSlots(new Set());
   };
 
-  /* ── Loading / Error ── */
+  /* ── Loading ── */
   if (loading) {
     return (
       <div className="min-h-screen bg-base flex items-center justify-center">
         <div className="neu-card p-8 text-center">
-          <div className="w-12 h-12 rounded-full bg-base neu-raised mx-auto mb-4 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+            style={{ border: "1px solid rgba(68,220,234,0.2)", background: "rgba(68,220,234,0.06)" }}>
             <div className="w-5 h-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
           </div>
           <p className="text-muted text-sm">불러오는 중...</p>
@@ -368,9 +333,7 @@ export default function InvitePage() {
       <div className="min-h-screen bg-base flex items-center justify-center px-6">
         <div className="neu-card p-10 text-center max-w-sm w-full">
           <p className="text-fore mb-6">{error || "약속을 찾을 수 없습니다."}</p>
-          <Link href="/" className="neu-btn neu-btn-secondary px-6 py-3 text-sm">
-            홈으로 돌아가기
-          </Link>
+          <Link href="/" className="neu-btn neu-btn-secondary px-6 py-3">홈으로 돌아가기</Link>
         </div>
       </div>
     );
@@ -383,21 +346,17 @@ export default function InvitePage() {
     return (
       <div className="min-h-screen bg-base flex items-center justify-center px-6">
         <div className="neu-card p-12 sm:p-16 text-center max-w-md w-full">
-          {/* Nested circle success decoration */}
           <div className="flex justify-center mb-8">
-            <div className="w-24 h-24 rounded-full bg-base neu-raised flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-base neu-deep flex items-center justify-center">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg, #38B2AC, #4FD1C5)" }}
-                >
-                  <CheckCircle size={20} strokeWidth={2.5} className="text-white" />
-                </div>
-              </div>
+            <div className="w-20 h-20 rounded-full flex items-center justify-center neu-glow-pulse"
+              style={{
+                background: "radial-gradient(circle at 40% 40%, rgba(52,211,153,0.25), rgba(52,211,153,0.06))",
+                border: "1px solid rgba(52,211,153,0.4)",
+              }}>
+              <CheckCircle size={32} strokeWidth={1.5} className="text-success" />
             </div>
           </div>
 
-          <h1 className="font-display text-2xl font-extrabold text-fore mb-2">
+          <h1 className="font-display text-2xl font-bold text-fore mb-2">
             {isEditing ? "응답이 수정되었습니다!" : "응답이 제출되었습니다!"}
           </h1>
           <p className="text-muted mb-8">
@@ -405,17 +364,11 @@ export default function InvitePage() {
           </p>
 
           <div className="flex flex-col gap-3">
-            <Link
-              href={`/meetings/${meeting.id}/manage`}
-              className="neu-btn neu-btn-primary py-4 text-sm"
-            >
+            <Link href={`/meetings/${meeting.id}/manage`} className="neu-btn neu-btn-primary py-4">
               응답 현황 보기
             </Link>
             {editToken && (
-              <button
-                onClick={handleEditResponse}
-                className="neu-btn neu-btn-secondary py-4 text-sm"
-              >
+              <button onClick={handleEditResponse} className="neu-btn neu-btn-secondary py-4">
                 응답 수정하기
               </button>
             )}
@@ -425,7 +378,7 @@ export default function InvitePage() {
     );
   }
 
-  /* ── Main page ── */
+  /* ── Main ── */
   return (
     <div className="min-h-screen bg-base">
       <header className="sticky top-0 z-50 bg-base/80 backdrop-blur-sm py-4 px-6">
@@ -434,42 +387,35 @@ export default function InvitePage() {
             <Link href="/" className="font-display font-bold text-xl text-fore tracking-tight hover:text-accent transition-colors">
               시간조율
             </Link>
-            <Link href="/" className="neu-btn neu-btn-secondary px-4 py-2 text-sm">← 홈</Link>
+            <Link href="/" className="neu-btn neu-btn-secondary px-4 py-2">← 홈</Link>
           </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-10 space-y-6">
+      <main className="max-w-3xl mx-auto px-6 py-10 space-y-5">
 
         {/* Meeting info */}
         <div className="neu-card p-7">
-          <h1 className="font-display text-2xl font-extrabold text-fore tracking-tight mb-2">
-            {meeting.title}
-          </h1>
-          {meeting.description && (
-            <p className="text-muted text-sm mb-4">{meeting.description}</p>
-          )}
+          <h1 className="font-display text-2xl font-bold text-fore tracking-tight mb-2">{meeting.title}</h1>
+          {meeting.description && <p className="text-muted text-sm mb-4">{meeting.description}</p>}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-base neu-inset-sm rounded-2xl p-4">
+            <div className="neu-inset-sm rounded-xl p-4">
               <p className="text-xs text-muted font-semibold uppercase tracking-wide mb-1">기간</p>
               <p className="text-sm font-medium text-fore">
                 {formatDateShort(meeting.startDate)} — {formatDateShort(meeting.endDate)}
               </p>
             </div>
-            <div className="bg-base neu-inset-sm rounded-2xl p-4">
+            <div className="neu-inset-sm rounded-xl p-4">
               <p className="text-xs text-muted font-semibold uppercase tracking-wide mb-1">마감</p>
               <p className="text-sm font-medium text-fore">{formatDate(meeting.deadline)}</p>
             </div>
           </div>
 
           {meeting.isConfirmed && meeting.confirmedDate && meeting.confirmedSlot && (
-            <div className="mt-4 rounded-2xl p-4 flex items-center gap-3"
-              style={{
-                background: "linear-gradient(135deg, rgba(56,178,172,0.15), rgba(79,209,197,0.1))",
-                boxShadow: "inset 4px 4px 8px rgb(163 177 198 / 0.4), inset -4px -4px 8px rgba(255,255,255,0.6)",
-              }}
-            >
-              <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center shrink-0">
+            <div className="mt-4 rounded-xl p-4 flex items-center gap-3"
+              style={{ background: "rgba(52,211,153,0.07)", border: "1px solid rgba(52,211,153,0.2)" }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: "rgba(52,211,153,0.15)" }}>
                 <CheckCircle size={16} className="text-success" />
               </div>
               <div>
@@ -482,107 +428,88 @@ export default function InvitePage() {
           )}
         </div>
 
-        {/* Confirmed — closed */}
         {meeting.isConfirmed ? (
           <div className="neu-card p-10 text-center">
             <p className="text-muted">약속 일정이 확정되어 응답을 받지 않습니다.</p>
           </div>
 
-        /* Editing */
         ) : isEditing ? (
           <div className="neu-card p-7">
             <h2 className="font-display font-bold text-fore mb-2">응답 수정</h2>
-            <p className="text-sm text-muted mb-6">
-              불가능한 시간을 탭하거나 드래그하여 선택하세요.
-            </p>
+            <p className="text-sm text-muted mb-6">불가능한 시간을 탭하거나 드래그하여 선택하세요.</p>
             <HourlyDragGrid dates={dates} unavailableSlots={unavailableSlots} setUnavailableSlots={setUnavailableSlots} />
             {submitError && (
-              <div className="neu-inset-sm rounded-2xl px-4 py-3 flex items-center gap-2 mt-4">
-                <AlertCircle size={16} className="text-accent shrink-0" />
-                <p className="text-sm text-fore">{submitError}</p>
+              <div className="rounded-xl px-4 py-3 flex items-center gap-2 mt-4"
+                style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                <AlertCircle size={16} className="text-red-400 shrink-0" />
+                <p className="text-sm text-red-400">{submitError}</p>
               </div>
             )}
-            <button
-              onClick={handleSubmit}
-              disabled={submitLoading}
-              className="neu-btn neu-btn-primary w-full py-4 text-sm mt-6"
-            >
+            <button onClick={handleSubmit} disabled={submitLoading}
+              className="neu-btn neu-btn-primary w-full py-4 mt-6">
               {submitLoading ? "저장 중..." : "응답 수정 완료 →"}
             </button>
           </div>
 
-        /* Step 1 */
         ) : step === 1 ? (
           <div className="neu-card p-7">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 rounded-xl bg-base neu-deep flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ background: "rgba(68,220,234,0.1)", border: "1px solid rgba(68,220,234,0.2)" }}>
                 <span className="font-display text-xs font-bold text-accent">01</span>
               </div>
               <h2 className="font-display font-bold text-fore">참가자 정보</h2>
             </div>
 
             {namePhoneError && (
-              <div className="bg-base neu-inset-sm rounded-2xl px-4 py-3 flex items-center gap-2 mb-5">
-                <AlertCircle size={16} className="text-accent shrink-0" />
-                <p className="text-sm text-fore">{namePhoneError}</p>
+              <div className="rounded-xl px-4 py-3 flex items-center gap-2 mb-5"
+                style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                <AlertCircle size={16} className="text-red-400 shrink-0" />
+                <p className="text-sm text-red-400">{namePhoneError}</p>
               </div>
             )}
 
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-fore mb-2">
                   이름 <span className="text-accent">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleNamePhoneNext()}
-                  placeholder="이름을 입력하세요"
-                  className="neu-input"
-                />
+                  placeholder="이름을 입력하세요" className="neu-input" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-fore mb-2">
                   전화번호 <span className="text-accent">*</span>
                 </label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleNamePhoneNext()}
-                  placeholder="01012345678"
-                  className="neu-input"
-                />
+                  placeholder="01012345678" className="neu-input" />
                 <p className="text-xs text-muted mt-2 ml-1">하이픈(-) 없이 숫자만 입력해주세요</p>
               </div>
             </div>
 
-            <button onClick={handleNamePhoneNext} className="neu-btn neu-btn-primary w-full py-4 text-sm mt-7">
+            <button onClick={handleNamePhoneNext} className="neu-btn neu-btn-primary w-full py-4 mt-7">
               다음 →
             </button>
-
             {editToken && !isEditing && (
-              <button onClick={handleEditResponse} className="neu-btn neu-btn-secondary w-full py-4 text-sm mt-3">
+              <button onClick={handleEditResponse} className="neu-btn neu-btn-secondary w-full py-4 mt-3">
                 이전 응답 수정하기
               </button>
             )}
           </div>
 
-        /* Step 2 */
         ) : (
           <div className="neu-card p-7">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-base neu-deep flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                  style={{ background: "rgba(68,220,234,0.1)", border: "1px solid rgba(68,220,234,0.2)" }}>
                   <span className="font-display text-xs font-bold text-accent">02</span>
                 </div>
                 <h2 className="font-display font-bold text-fore">불가능한 시간 선택</h2>
               </div>
-              <button
-                onClick={() => setStep(1)}
-                className="neu-btn neu-btn-secondary px-3 py-1.5 text-xs"
-              >
+              <button onClick={() => setStep(1)} className="neu-btn neu-btn-secondary px-3 py-1.5 text-xs">
                 ← 정보 수정
               </button>
             </div>
@@ -595,17 +522,15 @@ export default function InvitePage() {
             <HourlyDragGrid dates={dates} unavailableSlots={unavailableSlots} setUnavailableSlots={setUnavailableSlots} />
 
             {submitError && (
-              <div className="bg-base neu-inset-sm rounded-2xl px-4 py-3 flex items-center gap-2 mt-4">
-                <AlertCircle size={16} className="text-accent shrink-0" />
-                <p className="text-sm text-fore">{submitError}</p>
+              <div className="rounded-xl px-4 py-3 flex items-center gap-2 mt-4"
+                style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                <AlertCircle size={16} className="text-red-400 shrink-0" />
+                <p className="text-sm text-red-400">{submitError}</p>
               </div>
             )}
 
-            <button
-              onClick={handleSubmit}
-              disabled={submitLoading}
-              className="neu-btn neu-btn-primary w-full py-4 text-sm mt-6"
-            >
+            <button onClick={handleSubmit} disabled={submitLoading}
+              className="neu-btn neu-btn-primary w-full py-4 mt-6">
               {submitLoading ? "제출 중..." : "응답 제출 →"}
             </button>
           </div>

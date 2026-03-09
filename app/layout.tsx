@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Noto_Sans_KR } from "next/font/google";
+import { Space_Grotesk, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  variable: "--font-jakarta",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
   display: "swap",
 });
 
@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${plusJakarta.variable} ${notoSansKR.variable}`}>
+    <html lang="ko" className={`${spaceGrotesk.variable} ${notoSansKR.variable}`}>
       <body className="bg-base min-h-screen antialiased">
         {children}
       </body>

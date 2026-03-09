@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
+  --font-display: var(--font-space-grotesk), "Space Grotesk", ui-sans-serif, sans-serif;
   --font-sans: var(--font-noto-sans), "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
-
-  --color-base: #E0E5EC;
-  --color-fore: #3D4852;
-  --color-muted: #6B7280;
-  --color-accent: #6C63FF;
-  --color-accent-light: #8B84FF;
-  --color-success: #38B2AC;
+  --color-base: #0C0C0F;
+  --color-surface: #111115;
+  --color-fore: #F0F0F5;
+  --color-muted: #71717A;
+  --color-accent: #44DCEA;
+  --color-accent-light: #6AE6F0;
+  --color-success: #34D399;
 }
 
 @keyframes float {
@@ -17,15 +17,26 @@
   50%       { transform: translateY(-14px); }
 }
 
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(68,220,234,0.2), 0 0 50px rgba(68,220,234,0.06); }
+  50%       { box-shadow: 0 0 36px rgba(68,220,234,0.4), 0 0 80px rgba(68,220,234,0.14); }
+}
+
 @layer base {
   html { scroll-behavior: smooth; }
 
   body {
-    background-color: #E0E5EC;
-    color: #3D4852;
+    background-color: #0C0C0F;
+    color: #F0F0F5;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% 0%, rgba(68,220,234,0.055) 0%, transparent 65%),
+      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+    background-size: 100% auto, 40px 40px, 40px 40px;
+    background-repeat: no-repeat, repeat, repeat;
   }
 
   input, textarea, select, button {
@@ -33,137 +44,115 @@
   }
 
   input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
     opacity: 0.4;
     cursor: pointer;
   }
 }
 
-/* ── Neumorphic component classes ── */
 @layer components {
 
-  /* Extruded — element raised from surface */
-  .neu-raised {
-    box-shadow:
-      9px 9px 16px rgb(163 177 198 / 0.6),
-      -9px -9px 16px rgba(255, 255, 255, 0.5);
-  }
-  .neu-raised-sm {
-    box-shadow:
-      5px 5px 10px rgb(163 177 198 / 0.6),
-      -5px -5px 10px rgba(255, 255, 255, 0.5);
-  }
-
-  /* Inset — element pressed into surface */
-  .neu-inset {
-    box-shadow:
-      inset 6px 6px 10px rgb(163 177 198 / 0.6),
-      inset -6px -6px 10px rgba(255, 255, 255, 0.5);
-  }
-  .neu-deep {
-    box-shadow:
-      inset 10px 10px 20px rgb(163 177 198 / 0.7),
-      inset -10px -10px 20px rgba(255, 255, 255, 0.6);
-  }
-  .neu-inset-sm {
-    box-shadow:
-      inset 3px 3px 6px rgb(163 177 198 / 0.6),
-      inset -3px -3px 6px rgba(255, 255, 255, 0.5);
-  }
-
-  /* Card — the primary container */
+  /* ── Cards ── */
   .neu-card {
-    background-color: #E0E5EC;
-    border-radius: 32px;
-    box-shadow:
-      9px 9px 16px rgb(163 177 198 / 0.6),
-      -9px -9px 16px rgba(255, 255, 255, 0.5);
-    transition: box-shadow 300ms ease-out, transform 300ms ease-out;
+    background: #111115;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    transition: border-color 200ms ease, transform 200ms ease;
   }
   .neu-card-interactive:hover {
+    border-color: rgba(255,255,255,0.16);
     transform: translateY(-2px);
-    box-shadow:
-      12px 12px 20px rgb(163 177 198 / 0.7),
-      -12px -12px 20px rgba(255, 255, 255, 0.6);
   }
 
-  /* Input — inset well for text entry */
+  /* ── Surfaces ── */
+  .neu-raised {
+    background: #18181D;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .neu-raised-sm {
+    background: #16161B;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .neu-inset {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .neu-deep {
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .neu-inset-sm {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* ── Time slot cells ── */
+  .neu-slot-avail {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .neu-slot-unavail {
+    background: rgba(68,220,234,0.1);
+    border: 1px solid rgba(68,220,234,0.28);
+  }
+
+  /* ── Input ── */
   .neu-input {
-    background-color: #E0E5EC;
-    border: none;
-    outline: none;
-    border-radius: 16px;
-    color: #3D4852;
+    background: #0C0C0F;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: #F0F0F5;
     width: 100%;
-    padding: 14px 18px;
-    box-shadow:
-      inset 6px 6px 10px rgb(163 177 198 / 0.6),
-      inset -6px -6px 10px rgba(255, 255, 255, 0.5);
-    transition: box-shadow 300ms ease-out;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+    font-size: 0.875rem;
   }
-  .neu-input::placeholder { color: #A0AEC0; }
+  .neu-input::placeholder { color: #52525B; }
   .neu-input:focus {
-    box-shadow:
-      inset 10px 10px 20px rgb(163 177 198 / 0.7),
-      inset -10px -10px 20px rgba(255, 255, 255, 0.6);
-    outline: 2px solid #6C63FF;
-    outline-offset: 3px;
+    border-color: #44DCEA;
+    box-shadow: 0 0 0 3px rgba(68,220,234,0.12);
   }
 
-  /* Buttons */
+  /* ── Buttons ── */
   .neu-btn {
-    border-radius: 16px;
+    border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: all 300ms ease-out;
-    box-shadow:
-      5px 5px 10px rgb(163 177 198 / 0.6),
-      -5px -5px 10px rgba(255, 255, 255, 0.5);
+    transition: all 180ms ease;
+    white-space: nowrap;
+    font-size: 0.875rem;
   }
-  .neu-btn:hover {
-    transform: translateY(-1px);
-    box-shadow:
-      9px 9px 16px rgb(163 177 198 / 0.6),
-      -9px -9px 16px rgba(255, 255, 255, 0.5);
-  }
-  .neu-btn:active {
-    transform: translateY(0.5px);
-  }
-  .neu-btn:focus-visible {
-    outline: 2px solid #6C63FF;
-    outline-offset: 3px;
-  }
-  .neu-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
+  .neu-btn:hover  { transform: translateY(-1px); }
+  .neu-btn:active { transform: scale(0.97); }
+  .neu-btn:focus-visible { outline: 2px solid #44DCEA; outline-offset: 3px; }
+  .neu-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
   .neu-btn-primary {
-    background-color: #6C63FF;
-    color: #ffffff;
+    background: #44DCEA;
+    color: #0C0C0F;
+    font-weight: 700;
   }
-  .neu-btn-primary:active {
-    box-shadow:
-      inset 3px 3px 6px rgba(0, 0, 0, 0.2),
-      inset -3px -3px 6px rgba(255, 255, 255, 0.1);
+  .neu-btn-primary:hover {
+    background: #5EE5F2;
+    box-shadow: 0 0 20px rgba(68,220,234,0.35), 0 4px 14px rgba(0,0,0,0.35);
   }
 
   .neu-btn-secondary {
-    background-color: #E0E5EC;
-    color: #3D4852;
+    background: transparent;
+    color: #F0F0F5;
+    border: 1px solid rgba(255,255,255,0.12);
   }
-  .neu-btn-secondary:active {
-    box-shadow:
-      inset 3px 3px 6px rgb(163 177 198 / 0.6),
-      inset -3px -3px 6px rgba(255, 255, 255, 0.5);
+  .neu-btn-secondary:hover {
+    border-color: rgba(255,255,255,0.26);
+    background: rgba(255,255,255,0.05);
   }
 
-  /* Float animation */
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
+  /* ── Glow ── */
+  .neu-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+  .animate-float  { animation: float 3s ease-in-out infinite; }
 }
