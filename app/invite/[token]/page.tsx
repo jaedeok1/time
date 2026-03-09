@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Clock, ArrowLeft, CheckCircle, User, Phone, Calendar } from "lucide-react";
@@ -354,7 +354,7 @@ export default function InvitePage() {
               <h2 className="text-lg font-bold text-gray-900">불가능한 시간 선택</h2>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              참석이 불가능한 시간을 드래그하여 선택해주세요. 선택하지 않은 시간은 참석 가능으로 처리됩니다.
+              참석이 불가능한 시간을 탭하여 선택하세요. 선택하지 않은 시간은 참석 가능으로 처리됩니다.
             </p>
             <HourlyDragGrid
               dates={dates}
@@ -448,7 +448,7 @@ export default function InvitePage() {
             </div>
 
             <p className="text-sm text-gray-600 mb-4">
-              <strong>{name}</strong>님, 참석 불가능한 시간을 드래그하여 선택해주세요.
+              <strong>{name}</strong>님, 참석 불가능한 시간을 탭하여 선택하세요.
               <br />
               <span className="text-gray-400">선택하지 않은 시간 = 참석 가능</span>
             </p>
@@ -475,6 +475,13 @@ export default function InvitePage() {
   );
 }
 
+const TIME_GROUPS = [
+  { label: "새벽", hours: [0, 1, 2, 3, 4, 5] },
+  { label: "오전", hours: [6, 7, 8, 9, 10, 11] },
+  { label: "오후", hours: [12, 13, 14, 15, 16, 17] },
+  { label: "저녁", hours: [18, 19, 20, 21, 22, 23] },
+];
+
 function HourlyDragGrid({
   dates,
   unavailableSlots,
@@ -484,176 +491,121 @@ function HourlyDragGrid({
   unavailableSlots: Set<string>;
   setUnavailableSlots: React.Dispatch<React.SetStateAction<Set<string>>>;
 }) {
-  const isDragging = useRef(false);
-  const dragMode = useRef<"add" | "remove">("add");
-
-  const CELL_W = 30; // px per hour cell
-  const CELL_H = 44; // px cell height (touch friendly)
-  const DATE_W = 56; // px date label width
+  const [activeDate, setActiveDate] = useState(dates[0] || "");
 
   const isUnavailable = (date: string, hour: number) =>
     unavailableSlots.has(slotKey(date, hour));
 
-  const applyCell = useCallback(
-    (date: string, hour: number, mode: "add" | "remove") => {
-      const key = slotKey(date, hour);
-      setUnavailableSlots((prev) => {
-        const next = new Set(prev);
-        if (mode === "add") next.add(key);
-        else next.delete(key);
-        return next;
+  const toggleHour = (date: string, hour: number) => {
+    const key = slotKey(date, hour);
+    setUnavailableSlots((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleAllDay = (date: string) => {
+    const allSelected = HOURS.every((h) => isUnavailable(date, h));
+    setUnavailableSlots((prev) => {
+      const next = new Set(prev);
+      HOURS.forEach((h) => {
+        const key = slotKey(date, h);
+        if (allSelected) next.delete(key);
+        else next.add(key);
       });
-    },
-    [setUnavailableSlots]
-  );
-
-  const handleMouseDown = (date: string, hour: number) => {
-    const currently = isUnavailable(date, hour);
-    dragMode.current = currently ? "remove" : "add";
-    isDragging.current = true;
-    applyCell(date, hour, dragMode.current);
+      return next;
+    });
   };
 
-  const handleMouseEnter = (date: string, hour: number) => {
-    if (!isDragging.current) return;
-    applyCell(date, hour, dragMode.current);
-  };
-
-  useEffect(() => {
-    const onUp = () => { isDragging.current = false; };
-    document.addEventListener("mouseup", onUp);
-    return () => document.removeEventListener("mouseup", onUp);
-  }, []);
-
-  const handleTouchStart = (e: React.TouchEvent, date: string, hour: number) => {
-    e.preventDefault();
-    const currently = isUnavailable(date, hour);
-    dragMode.current = currently ? "remove" : "add";
-    isDragging.current = true;
-    applyCell(date, hour, dragMode.current);
-  };
-
-  useEffect(() => {
-    const onEnd = () => { isDragging.current = false; };
-    const onMove = (e: TouchEvent) => {
-      if (!isDragging.current) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      const el = document.elementFromPoint(touch.clientX, touch.clientY);
-      if (!el) return;
-      const cell = el.closest("[data-date][data-hour]") as HTMLElement | null;
-      if (!cell) return;
-      applyCell(cell.dataset.date!, parseInt(cell.dataset.hour!), dragMode.current);
-    };
-    document.addEventListener("touchend", onEnd);
-    document.addEventListener("touchmove", onMove, { passive: false });
-    return () => {
-      document.removeEventListener("touchend", onEnd);
-      document.removeEventListener("touchmove", onMove);
-    };
-  }, [applyCell]);
-
-  const totalWidth = DATE_W + HOURS.length * CELL_W;
+  const countForDate = (date: string) =>
+    HOURS.filter((h) => isUnavailable(date, h)).length;
 
   return (
     <div>
-      {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-gray-500 mb-2 flex-wrap">
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-4 h-4 border border-gray-200 bg-white rounded-sm" />
-          참석 가능
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-4 h-4 border border-red-300 bg-red-400 rounded-sm" />
-          참석 불가
-        </span>
+      {/* Date tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-6 px-6">
+        {dates.map((date) => {
+          const d = new Date(date + "T00:00:00");
+          const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+          const count = countForDate(date);
+          const isActive = date === activeDate;
+          return (
+            <button
+              key={date}
+              type="button"
+              onClick={() => setActiveDate(date)}
+              className={`shrink-0 flex flex-col items-center px-4 py-2 rounded-xl transition-colors min-w-[60px] ${
+                isActive
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              <span className={`text-xs font-medium ${
+                isActive ? "text-indigo-200" : isWeekend ? "text-red-400" : "text-gray-500"
+              }`}>
+                {WEEKDAY_NAMES[d.getDay()]}
+              </span>
+              <span className="text-sm font-bold">{d.getMonth() + 1}/{d.getDate()}</span>
+              <span className={`text-xs mt-0.5 ${
+                count > 0 ? (isActive ? "text-red-200" : "text-red-500") : "text-transparent"
+              }`}>
+                {count > 0 ? `${count}개 불가` : "·"}
+              </span>
+            </button>
+          );
+        })}
       </div>
-      <p className="text-xs text-gray-400 mb-3">탭 또는 드래그로 선택 · 날짜를 누르면 하루 전체 선택</p>
 
-      {/* Scrollable grid */}
-      <div className="overflow-x-auto -mx-6 px-6 pb-2">
-        <div style={{ minWidth: totalWidth }} className="select-none">
-          {/* Hour header */}
-          <div className="flex mb-1" style={{ paddingLeft: DATE_W }}>
-            {HOURS.map((h) => (
-              <div key={h} style={{ width: CELL_W, minWidth: CELL_W }} className="relative text-center">
-                {h % 6 === 0 && (
-                  <span className="absolute left-0 -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap">
-                    {h}시
-                  </span>
-                )}
-              </div>
-            ))}
+      {/* Quick actions */}
+      <div className="flex justify-between items-center mb-3">
+        <p className="text-sm text-gray-500">
+          {countForDate(activeDate) === 0
+            ? "불가능한 시간을 탭하세요"
+            : `${countForDate(activeDate)}시간 불가로 선택됨`}
+        </p>
+        <button
+          type="button"
+          onClick={() => toggleAllDay(activeDate)}
+          className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+        >
+          {HOURS.every((h) => isUnavailable(activeDate, h)) ? "전체 해제" : "하루 전체 선택"}
+        </button>
+      </div>
+
+      {/* Hour list grouped by time of day */}
+      <div>
+        {TIME_GROUPS.map((group) => (
+          <div key={group.label} className="mb-3">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-1">
+              {group.label}
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {group.hours.map((hour) => {
+                const unavail = isUnavailable(activeDate, hour);
+                return (
+                  <button
+                    key={hour}
+                    type="button"
+                    onClick={() => toggleHour(activeDate, hour)}
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors text-left ${
+                      unavail
+                        ? "bg-red-50 border-2 border-red-300 text-red-700"
+                        : "bg-gray-50 border-2 border-transparent text-gray-700 active:bg-gray-100"
+                    }`}
+                  >
+                    <span className="text-sm font-medium">{hour}:00</span>
+                    <span className={`text-xs font-medium ${unavail ? "text-red-500" : "text-gray-300"}`}>
+                      {unavail ? "불가" : "가능"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-
-          {/* Date rows */}
-          {dates.map((date) => {
-            const d = new Date(date + "T00:00:00");
-            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-            const allSelected = HOURS.every((h) => isUnavailable(date, h));
-
-            const toggleAllDay = () => {
-              const mode = allSelected ? "remove" : "add";
-              setUnavailableSlots((prev) => {
-                const next = new Set(prev);
-                HOURS.forEach((h) => {
-                  const key = slotKey(date, h);
-                  if (mode === "add") next.add(key);
-                  else next.delete(key);
-                });
-                return next;
-              });
-            };
-
-            return (
-              <div key={date} className="flex items-center mb-1">
-                {/* Date label */}
-                <button
-                  type="button"
-                  onClick={toggleAllDay}
-                  title={allSelected ? "전체 해제" : "하루 전체 선택"}
-                  style={{ width: DATE_W, minWidth: DATE_W, height: CELL_H }}
-                  className={`shrink-0 text-xs font-semibold pr-2 text-right leading-tight hover:opacity-70 transition-opacity ${
-                    isWeekend ? "text-red-500" : "text-gray-600"
-                  } ${allSelected ? "opacity-50" : ""}`}
-                >
-                  <div>{d.getMonth() + 1}/{d.getDate()}</div>
-                  <div className={`font-normal ${allSelected ? "text-red-400" : "text-gray-400"}`}>
-                    {WEEKDAY_NAMES[d.getDay()]}
-                  </div>
-                </button>
-
-                {/* Hour cells — flush (no gap) to avoid miss-clicks */}
-                <div className="flex">
-                  {HOURS.map((hour) => {
-                    const unavail = isUnavailable(date, hour);
-                    const isSep = hour === 6 || hour === 12 || hour === 18;
-                    return (
-                      <div
-                        key={hour}
-                        data-date={date}
-                        data-hour={hour}
-                        style={{ width: CELL_W, minWidth: CELL_W, height: CELL_H }}
-                        className={`cursor-pointer transition-colors ${
-                          isSep ? "border-l border-gray-300" : ""
-                        } ${
-                          unavail
-                            ? "bg-red-400 active:bg-red-600"
-                            : "bg-gray-100 hover:bg-indigo-100 active:bg-indigo-200"
-                        }`}
-                        onMouseDown={() => handleMouseDown(date, hour)}
-                        onMouseEnter={() => handleMouseEnter(date, hour)}
-                        onTouchStart={(e) => handleTouchStart(e, date, hour)}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        ))}
       </div>
-      <p className="text-xs text-gray-400 text-center mt-1">← 좌우로 스크롤하여 시간 확인 →</p>
     </div>
   );
 }
