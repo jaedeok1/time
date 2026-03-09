@@ -106,7 +106,7 @@
     padding: 12px 16px;
     outline: none;
     transition: border-color 200ms ease, box-shadow 200ms ease;
-    font-size: 0.875rem;
+    font-size: 1rem;
   }
   .neu-input::placeholder { color: #52525B; }
   .neu-input:focus {
