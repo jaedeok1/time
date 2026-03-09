@@ -91,7 +91,7 @@ export default function ManagePage() {
       if (res.ok) {
         setMeeting(data);
       } else {
-        setError(data.error || "모임 정보를 가져올 수 없습니다.");
+        setError(data.error || "약속 정보를 가져올 수 없습니다.");
       }
     } catch {
       setError("서버와 연결할 수 없습니다.");
@@ -150,7 +150,7 @@ export default function ManagePage() {
         await fetchMeeting();
         setSelectedSlot(null);
       } else {
-        setConfirmError(data.error || "모임 확정 중 오류가 발생했습니다.");
+        setConfirmError(data.error || "약속 확정 중 오류가 발생했습니다.");
       }
     } catch {
       setConfirmError("서버와 연결할 수 없습니다.");
@@ -174,7 +174,7 @@ export default function ManagePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error || "모임을 찾을 수 없습니다."}</p>
+          <p className="text-red-600 mb-4">{error || "약속을 찾을 수 없습니다."}</p>
           <Link href="/" className="text-indigo-600 hover:underline">
             홈으로 돌아가기
           </Link>
@@ -217,7 +217,7 @@ export default function ManagePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100">
             <div>
-              <p className="text-xs text-gray-500 mb-1">모임 기간</p>
+              <p className="text-xs text-gray-500 mb-1">약속 기간</p>
               <p className="text-sm font-medium text-gray-800">
                 {formatDateShort(meeting.startDate)} ~ {formatDateShort(meeting.endDate)}
               </p>
@@ -240,7 +240,7 @@ export default function ManagePage() {
             <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4">
               <div className="flex items-center gap-2 text-green-700">
                 <CheckCircle className="w-5 h-5" />
-                <span className="font-semibold">모임 확정</span>
+                <span className="font-semibold">약속 확정</span>
               </div>
               <p className="text-green-800 mt-1">
                 {formatDateShort(meeting.confirmedDate)} ·{" "}
@@ -381,7 +381,7 @@ export default function ManagePage() {
                   className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   <CheckCircle className="w-5 h-5" />
-                  {confirming ? "확정 중..." : "이 시간으로 모임 확정"}
+                  {confirming ? "확정 중..." : "이 시간으로 약속 확정"}
                 </button>
                 <p className="text-xs text-gray-500 mt-2 text-center">
                   {formatDateShort(selectedSlot.date)} ·{" "}

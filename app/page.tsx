@@ -15,7 +15,7 @@ export default function Home() {
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-indigo-600 transition-colors"
             >
               <History className="w-4 h-4" />
-              내 모임
+              내 약속
             </Link>
           </div>
         </div>
@@ -25,7 +25,7 @@ export default function Home() {
       <main className="max-w-4xl mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-4">
-            모임 시간, 쉽게 맞추세요
+            약속 시간, 쉽게 맞추세요
           </h1>
           <p className="text-lg text-gray-600 mb-8">
             참가자들이 불가능한 시간을 표시하면, 가장 많은 사람이 참석 가능한 시간을 자동으로 찾아드립니다.
@@ -35,7 +35,7 @@ export default function Home() {
             className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-4 rounded-xl text-lg transition-colors shadow-lg"
           >
             <Calendar className="w-5 h-5" />
-            모임 시작하기
+            약속 잡기
           </Link>
         </div>
 
@@ -50,9 +50,9 @@ export default function Home() {
               <div className="bg-indigo-600 text-white text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center mb-3">
                 1
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">모임 열기</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">약속 잡기</h3>
               <p className="text-gray-600 text-sm">
-                모임 이름, 날짜 범위, 응답 마감일을 설정하고 모임을 시작합니다.
+                약속 이름, 날짜 범위, 응답 마감일을 설정하고 약속을 만듭니다.
               </p>
             </div>
             <div className="flex flex-col items-center text-center">

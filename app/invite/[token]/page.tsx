@@ -97,7 +97,7 @@ export default function InvitePage() {
       if (res.ok) {
         setMeeting(data);
       } else {
-        setError(data.error || "모임을 찾을 수 없습니다.");
+        setError(data.error || "약속을 찾을 수 없습니다.");
       }
     } catch {
       setError("서버와 연결할 수 없습니다.");
@@ -234,7 +234,7 @@ export default function InvitePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error || "모임을 찾을 수 없습니다."}</p>
+          <p className="text-red-600 mb-4">{error || "약속을 찾을 수 없습니다."}</p>
           <Link href="/" className="text-indigo-600 hover:underline">홈으로 돌아가기</Link>
         </div>
       </div>
@@ -263,7 +263,7 @@ export default function InvitePage() {
               {isEditing ? "응답이 수정되었습니다!" : "응답이 제출되었습니다!"}
             </h1>
             <p className="text-gray-600 mb-6">
-              <strong>{meeting.title}</strong> 모임에 응답해 주셨습니다.
+              <strong>{meeting.title}</strong> 약속에 응답해 주셨습니다.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
@@ -308,7 +308,7 @@ export default function InvitePage() {
           )}
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-xs text-gray-500 mb-0.5">모임 기간</p>
+              <p className="text-xs text-gray-500 mb-0.5">약속 기간</p>
               <p className="font-medium text-gray-800">
                 {formatDateShort(meeting.startDate)} ~ {formatDateShort(meeting.endDate)}
               </p>
@@ -323,7 +323,7 @@ export default function InvitePage() {
             <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4">
               <div className="flex items-center gap-2 text-green-700">
                 <CheckCircle className="w-5 h-5" />
-                <span className="font-semibold">모임이 확정되었습니다</span>
+                <span className="font-semibold">약속이 확정되었습니다</span>
               </div>
               <p className="text-green-800 mt-1 text-sm">
                 {formatDateShort(meeting.confirmedDate)} · {formatHour(parseInt(meeting.confirmedSlot))}
@@ -334,7 +334,7 @@ export default function InvitePage() {
 
         {meeting.isConfirmed ? (
           <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-            <p className="text-gray-600">모임 일정이 확정되어 응답을 받지 않습니다.</p>
+            <p className="text-gray-600">약속 일정이 확정되어 응답을 받지 않습니다.</p>
           </div>
         ) : isEditing ? (
           <div className="bg-white rounded-2xl shadow-sm p-6">
@@ -476,6 +476,10 @@ function HourlyDragGrid({
   const isDragging = useRef(false);
   const dragMode = useRef<"add" | "remove">("add");
 
+  const CELL_W = 30; // px per hour cell
+  const CELL_H = 44; // px cell height (touch friendly)
+  const DATE_W = 56; // px date label width
+
   const isUnavailable = (date: string, hour: number) =>
     unavailableSlots.has(slotKey(date, hour));
 
@@ -518,8 +522,9 @@ function HourlyDragGrid({
     applyCell(date, hour, dragMode.current);
   };
 
-  const handleTouchMove = useCallback(
-    (e: React.TouchEvent) => {
+  useEffect(() => {
+    const onEnd = () => { isDragging.current = false; };
+    const onMove = (e: TouchEvent) => {
       if (!isDragging.current) return;
       e.preventDefault();
       const touch = e.touches[0];
@@ -528,23 +533,21 @@ function HourlyDragGrid({
       const cell = el.closest("[data-date][data-hour]") as HTMLElement | null;
       if (!cell) return;
       applyCell(cell.dataset.date!, parseInt(cell.dataset.hour!), dragMode.current);
-    },
-    [applyCell]
-  );
-
-  useEffect(() => {
-    const onEnd = () => { isDragging.current = false; };
+    };
     document.addEventListener("touchend", onEnd);
-    return () => document.removeEventListener("touchend", onEnd);
-  }, []);
+    document.addEventListener("touchmove", onMove, { passive: false });
+    return () => {
+      document.removeEventListener("touchend", onEnd);
+      document.removeEventListener("touchmove", onMove);
+    };
+  }, [applyCell]);
 
-  // Hour tick labels shown at 0, 6, 12, 18
-  const TICK_HOURS = new Set([0, 6, 12, 18]);
+  const totalWidth = DATE_W + HOURS.length * CELL_W;
 
   return (
     <div>
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-gray-500 mb-3 flex-wrap">
+      <div className="flex items-center gap-4 text-xs text-gray-500 mb-2 flex-wrap">
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-4 h-4 border border-gray-200 bg-white rounded-sm" />
           참석 가능
@@ -553,28 +556,26 @@ function HourlyDragGrid({
           <span className="inline-block w-4 h-4 border border-red-300 bg-red-400 rounded-sm" />
           참석 불가
         </span>
-        <span className="text-gray-400">· 드래그하여 범위 선택</span>
       </div>
+      <p className="text-xs text-gray-400 mb-3">탭 또는 드래그로 선택 · 날짜를 누르면 하루 전체 선택</p>
 
-      <div className="select-none">
-        {/* Hour tick header */}
-        <div className="flex mb-0.5">
-          <div className="w-16 shrink-0" />
-          <div className="flex-1 flex relative h-4">
+      {/* Scrollable grid */}
+      <div className="overflow-x-auto -mx-6 px-6 pb-2">
+        <div style={{ minWidth: totalWidth }} className="select-none">
+          {/* Hour header */}
+          <div className="flex mb-1" style={{ paddingLeft: DATE_W }}>
             {HOURS.map((h) => (
-              <div key={h} className="flex-1 relative">
-                {TICK_HOURS.has(h) && (
-                  <span className="absolute left-0 text-xs text-gray-400 -translate-x-1/2">
+              <div key={h} style={{ width: CELL_W, minWidth: CELL_W }} className="relative text-center">
+                {h % 6 === 0 && (
+                  <span className="absolute left-0 -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap">
                     {h}시
                   </span>
                 )}
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Date rows */}
-        <div onTouchMove={handleTouchMove}>
+          {/* Date rows */}
           {dates.map((date) => {
             const d = new Date(date + "T00:00:00");
             const isWeekend = d.getDay() === 0 || d.getDay() === 6;
@@ -595,14 +596,15 @@ function HourlyDragGrid({
 
             return (
               <div key={date} className="flex items-center mb-1">
-                {/* Date label — click to toggle all */}
+                {/* Date label */}
                 <button
                   type="button"
                   onClick={toggleAllDay}
                   title={allSelected ? "전체 해제" : "하루 전체 선택"}
-                  className={`w-16 shrink-0 text-xs font-semibold pr-2 text-right leading-tight cursor-pointer rounded hover:opacity-70 transition-opacity ${
+                  style={{ width: DATE_W, minWidth: DATE_W, height: CELL_H }}
+                  className={`shrink-0 text-xs font-semibold pr-2 text-right leading-tight hover:opacity-70 transition-opacity ${
                     isWeekend ? "text-red-500" : "text-gray-600"
-                  } ${allSelected ? "opacity-60" : ""}`}
+                  } ${allSelected ? "opacity-50" : ""}`}
                 >
                   <div>{d.getMonth() + 1}/{d.getDate()}</div>
                   <div className={`font-normal ${allSelected ? "text-red-400" : "text-gray-400"}`}>
@@ -610,23 +612,23 @@ function HourlyDragGrid({
                   </div>
                 </button>
 
-                {/* 24 hour boxes */}
-                <div className="flex-1 flex gap-px">
+                {/* Hour cells — flush (no gap) to avoid miss-clicks */}
+                <div className="flex">
                   {HOURS.map((hour) => {
                     const unavail = isUnavailable(date, hour);
-                    // Add separator every 6 hours for readability
-                    const hasSep = hour > 0 && hour % 6 === 0;
+                    const isSep = hour === 6 || hour === 12 || hour === 18;
                     return (
                       <div
                         key={hour}
                         data-date={date}
                         data-hour={hour}
-                        className={`flex-1 h-8 rounded-sm cursor-pointer transition-colors ${
-                          hasSep ? "ml-0.5" : ""
+                        style={{ width: CELL_W, minWidth: CELL_W, height: CELL_H }}
+                        className={`cursor-pointer transition-colors ${
+                          isSep ? "border-l border-gray-300" : ""
                         } ${
                           unavail
-                            ? "bg-red-400 hover:bg-red-500"
-                            : "bg-gray-100 hover:bg-indigo-100"
+                            ? "bg-red-400 active:bg-red-600"
+                            : "bg-gray-100 hover:bg-indigo-100 active:bg-indigo-200"
                         }`}
                         onMouseDown={() => handleMouseDown(date, hour)}
                         onMouseEnter={() => handleMouseEnter(date, hour)}
@@ -640,6 +642,7 @@ function HourlyDragGrid({
           })}
         </div>
       </div>
+      <p className="text-xs text-gray-400 text-center mt-1">← 좌우로 스크롤하여 시간 확인 →</p>
     </div>
   );
 }

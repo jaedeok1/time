@@ -225,8 +225,8 @@ export default function NewMeetingPage() {
 
     if (!formData.name.trim()) { setError("이름을 입력해주세요."); return; }
     if (!formData.phone.trim()) { setError("전화번호를 입력해주세요."); return; }
-    if (!formData.title.trim()) { setError("모임 이름을 입력해주세요."); return; }
-    if (!formData.startDate || !formData.endDate) { setError("모임 기간을 선택해주세요."); return; }
+    if (!formData.title.trim()) { setError("약속 이름을 입력해주세요."); return; }
+    if (!formData.startDate || !formData.endDate) { setError("약속 기간을 선택해주세요."); return; }
     if (!formData.deadline) { setError("응답 마감일을 설정해주세요."); return; }
     if (formData.deadline < today) { setError("응답 마감일은 오늘 이후여야 합니다."); return; }
 
@@ -289,7 +289,7 @@ export default function NewMeetingPage() {
             <div className="bg-indigo-100 rounded-full p-2">
               <Calendar className="w-6 h-6 text-indigo-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">새 모임 시작하기</h1>
+            <h1 className="text-2xl font-bold text-gray-900">새 약속 잡기</h1>
           </div>
 
           {error && (
@@ -333,14 +333,14 @@ export default function NewMeetingPage() {
             {/* Meeting title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                모임 이름 <span className="text-red-500">*</span>
+                약속 이름 <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                placeholder="예: 팀 회식, 스터디 모임"
+                placeholder="예: 팀 회식, 스터디, 동창 모임"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
@@ -348,7 +348,7 @@ export default function NewMeetingPage() {
             {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                모임 설명 <span className="text-gray-400">(선택)</span>
+                약속 설명 <span className="text-gray-400">(선택)</span>
               </label>
               <textarea
                 name="description"
@@ -363,7 +363,7 @@ export default function NewMeetingPage() {
             {/* Date range picker */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                모임 기간 <span className="text-red-500">*</span>
+                약속 기간 <span className="text-red-500">*</span>
               </label>
               <DateRangePicker
                 startDate={formData.startDate}
@@ -396,7 +396,7 @@ export default function NewMeetingPage() {
               disabled={loading}
               className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-semibold py-3 rounded-xl transition-colors"
             >
-              {loading ? "생성 중..." : "모임 시작하기"}
+              {loading ? "생성 중..." : "약속 잡기"}
             </button>
           </form>
         </div>
