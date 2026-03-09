@@ -19,6 +19,7 @@ interface Participant {
   name: string;
   phone: string;
   createdAt: string;
+  unavailableSlots: { date: string; timeSlot: string }[];
 }
 
 interface OptimalSlot {
@@ -83,6 +84,9 @@ export default function ManagePage() {
   const [selectedSlot, setSelectedSlot] = useState<OptimalSlot | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [confirmError, setConfirmError] = useState("");
+  const [showAllSlots, setShowAllSlots] = useState(false);
+  const [viewTab, setViewTab] = useState<"person" | "time">("person");
+  const [timeViewDate, setTimeViewDate] = useState("");
 
   const fetchMeeting = useCallback(async () => {
     try {
@@ -295,23 +299,23 @@ export default function ManagePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Optimal Time Slots */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              추천 시간대 TOP 5
-            </h2>
-            {meeting.totalParticipants === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-4">
-                아직 응답이 없습니다. 초대 링크를 공유하세요.
-              </p>
-            ) : meeting.optimalSlots.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-4">
-                추천할 시간대가 없습니다.
-              </p>
-            ) : (
+        {/* Optimal Time Slots */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            추천 시간대
+          </h2>
+          {meeting.totalParticipants === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-4">
+              아직 응답이 없습니다. 초대 링크를 공유하세요.
+            </p>
+          ) : meeting.optimalSlots.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-4">
+              추천할 시간대가 없습니다.
+            </p>
+          ) : (
+            <>
               <div className="space-y-2">
-                {meeting.optimalSlots.map((slot, index) => {
+                {(showAllSlots ? meeting.optimalSlots : meeting.optimalSlots.slice(0, 5)).map((slot, index) => {
                   const isSelected =
                     selectedSlot?.date === slot.date &&
                     selectedSlot?.timeSlot === slot.timeSlot;
@@ -368,64 +372,112 @@ export default function ManagePage() {
                   );
                 })}
               </div>
-            )}
-
-            {!meeting.isConfirmed && selectedSlot && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                {confirmError && (
-                  <p className="text-red-600 text-sm mb-3">{confirmError}</p>
-                )}
+              {meeting.optimalSlots.length > 5 && (
                 <button
-                  onClick={handleConfirm}
-                  disabled={confirming}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  onClick={() => setShowAllSlots((v) => !v)}
+                  className="mt-3 w-full text-sm text-indigo-600 hover:text-indigo-800 font-medium py-2 border border-indigo-200 rounded-xl hover:bg-indigo-50 transition-colors"
                 >
-                  <CheckCircle className="w-5 h-5" />
-                  {confirming ? "확정 중..." : "이 시간으로 약속 확정"}
+                  {showAllSlots ? "접기" : `더보기 (${meeting.optimalSlots.length - 5}개 더)`}
                 </button>
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  {formatDateShort(selectedSlot.date)} ·{" "}
-                  {formatSlotLabel(selectedSlot.timeSlot)}
-                </p>
-              </div>
-            )}
-          </div>
+              )}
+            </>
+          )}
 
-          {/* Participants List */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-indigo-600" />
-              참가자 목록 ({meeting.totalParticipants}명)
-            </h2>
-
-            {meeting.participants.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-4">
-                아직 응답한 참가자가 없습니다.
+          {!meeting.isConfirmed && selectedSlot && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              {confirmError && (
+                <p className="text-red-600 text-sm mb-3">{confirmError}</p>
+              )}
+              <button
+                onClick={handleConfirm}
+                disabled={confirming}
+                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-5 h-5" />
+                {confirming ? "확정 중..." : "이 시간으로 약속 확정"}
+              </button>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                {formatDateShort(selectedSlot.date)} ·{" "}
+                {formatSlotLabel(selectedSlot.timeSlot)}
               </p>
-            ) : (
-              <div className="space-y-2">
-                {meeting.participants.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{p.name}</p>
-                      <p className="text-xs text-gray-500">{p.phone}</p>
-                    </div>
-                    <p className="text-xs text-gray-400">
-                      {new Date(p.createdAt).toLocaleDateString("ko-KR", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+            </div>
+          )}
+        </div>
+
+        {/* Participant / Time View Tabs */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-lg font-bold text-gray-900">
+              응답 현황 ({meeting.totalParticipants}명)
+            </h2>
+            <div className="ml-auto flex gap-1 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewTab("person")}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  viewTab === "person" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                사람별
+              </button>
+              <button
+                onClick={() => setViewTab("time")}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  viewTab === "time" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                시간별
+              </button>
+            </div>
           </div>
+
+          {meeting.participants.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-4">
+              아직 응답한 참가자가 없습니다.
+            </p>
+          ) : viewTab === "person" ? (
+            <div className="space-y-3">
+              {meeting.participants.map((p) => {
+                const grouped = p.unavailableSlots.reduce<Record<string, string[]>>((acc, s) => {
+                  if (!acc[s.date]) acc[s.date] = [];
+                  acc[s.date].push(s.timeSlot);
+                  return acc;
+                }, {});
+                const sortedDates = Object.keys(grouped).sort();
+                return (
+                  <div key={p.id} className="border border-gray-100 rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <div>
+                        <span className="text-sm font-semibold text-gray-900">{p.name}</span>
+                        <span className="text-xs text-gray-400 ml-2">{p.phone}</span>
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        불가 {p.unavailableSlots.length}시간
+                      </span>
+                    </div>
+                    {sortedDates.length === 0 ? (
+                      <p className="text-xs text-green-600">모든 시간 가능</p>
+                    ) : (
+                      <div className="space-y-1 mt-2">
+                        {sortedDates.map((date) => (
+                          <div key={date} className="text-xs text-gray-600">
+                            <span className="font-medium text-gray-700">{formatDateShort(date)}: </span>
+                            {grouped[date]
+                              .map(Number)
+                              .sort((a, b) => a - b)
+                              .map((h) => `${h}:00`)
+                              .join(", ")}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <TimeView meeting={meeting} timeViewDate={timeViewDate} setTimeViewDate={setTimeViewDate} />
+          )}
         </div>
 
         <div className="text-center">
@@ -435,6 +487,105 @@ export default function ManagePage() {
           </p>
         </div>
       </main>
+    </div>
+  );
+}
+
+const HOURS_ALL = Array.from({ length: 24 }, (_, i) => i);
+const WEEKDAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
+
+function getDateRange(startDate: string, endDate: string): string[] {
+  const dates: string[] = [];
+  const current = new Date(startDate.split("T")[0] + "T00:00:00");
+  const end = new Date(endDate.split("T")[0] + "T00:00:00");
+  while (current <= end) {
+    const y = current.getFullYear();
+    const m = String(current.getMonth() + 1).padStart(2, "0");
+    const d = String(current.getDate()).padStart(2, "0");
+    dates.push(`${y}-${m}-${d}`);
+    current.setDate(current.getDate() + 1);
+  }
+  return dates;
+}
+
+function TimeView({
+  meeting,
+  timeViewDate,
+  setTimeViewDate,
+}: {
+  meeting: Meeting;
+  timeViewDate: string;
+  setTimeViewDate: (d: string) => void;
+}) {
+  const dates = getDateRange(meeting.startDate, meeting.endDate);
+  const activeDate = timeViewDate || dates[0] || "";
+
+  return (
+    <div>
+      {/* Date tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-6 px-6">
+        {dates.map((date) => {
+          const d = new Date(date + "T00:00:00");
+          const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+          const isActive = date === activeDate;
+          return (
+            <button
+              key={date}
+              onClick={() => setTimeViewDate(date)}
+              className={`shrink-0 flex flex-col items-center px-3 py-2 rounded-xl transition-colors min-w-[52px] ${
+                isActive ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              <span className={`text-xs font-medium ${
+                isActive ? "text-indigo-200" : isWeekend ? "text-red-400" : "text-gray-500"
+              }`}>
+                {WEEKDAY_NAMES[d.getDay()]}
+              </span>
+              <span className="text-sm font-bold">{d.getMonth() + 1}/{d.getDate()}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Hour rows */}
+      <div className="space-y-1">
+        {HOURS_ALL.map((hour) => {
+          const unavailable = meeting.participants.filter((p) =>
+            p.unavailableSlots.some((s) => s.date === activeDate && s.timeSlot === String(hour))
+          );
+          const available = meeting.participants.filter((p) =>
+            !p.unavailableSlots.some((s) => s.date === activeDate && s.timeSlot === String(hour))
+          );
+          const availCount = available.length;
+          const total = meeting.totalParticipants;
+
+          return (
+            <div key={hour} className="flex items-start gap-3 px-3 py-2 rounded-xl hover:bg-gray-50">
+              <span className="text-sm font-mono text-gray-500 w-12 shrink-0 mt-0.5">{hour}:00</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-indigo-500 rounded-full transition-all"
+                      style={{ width: total > 0 ? `${(availCount / total) * 100}%` : "0%" }}
+                    />
+                  </div>
+                  <span className={`text-xs font-semibold shrink-0 ${
+                    availCount === total ? "text-green-600" : availCount === 0 ? "text-red-500" : "text-indigo-600"
+                  }`}>
+                    {availCount}/{total}명
+                  </span>
+                </div>
+                {unavailable.length > 0 && (
+                  <p className="text-xs text-red-400 truncate">
+                    불가: {unavailable.map((p) => p.name).join(", ")}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

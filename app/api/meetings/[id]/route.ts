@@ -74,21 +74,21 @@ export async function GET(
     }
 
     timeOptions.sort((a, b) => b.availableCount - a.availableCount);
-    const top5 = timeOptions.slice(0, 5);
+    const optimalSlots = timeOptions.slice(0, 20);
 
     const participantsWithMaskedPhone = participants.map((p) => ({
       id: p.id,
       name: p.name,
       phone: p.phone.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2"),
       createdAt: p.createdAt,
-      unavailableSlotsCount: p.unavailableSlots.length,
+      unavailableSlots: p.unavailableSlots.map((s) => ({ date: s.date, timeSlot: s.timeSlot })),
     }));
 
     return NextResponse.json({
       ...meeting,
       participants: participantsWithMaskedPhone,
       totalParticipants,
-      optimalSlots: top5,
+      optimalSlots,
     });
   } catch (error) {
     console.error("Error fetching meeting:", error);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Clock, ArrowLeft, CheckCircle, User, Phone, Calendar } from "lucide-react";
@@ -109,6 +109,21 @@ export default function InvitePage() {
   useEffect(() => {
     fetchMeeting();
   }, [fetchMeeting]);
+
+  // Default all slots to unavailable when meeting data loads (new responses only)
+  useEffect(() => {
+    if (meeting && !isEditing) {
+      const allSlots = new Set<string>();
+      const d = getDateRange(meeting.startDate, meeting.endDate);
+      for (const date of d) {
+        for (const h of HOURS) {
+          allSlots.add(slotKey(date, h));
+        }
+      }
+      setUnavailableSlots(allSlots);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meeting]);
 
   useEffect(() => {
     if (token) {
@@ -354,7 +369,7 @@ export default function InvitePage() {
               <h2 className="text-lg font-bold text-gray-900">불가능한 시간 선택</h2>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              참석이 불가능한 시간을 탭하여 선택하세요. 선택하지 않은 시간은 참석 가능으로 처리됩니다.
+              참석이 불가능한 시간을 탭하거나 드래그하여 선택하세요. 선택하지 않은 시간은 참석 가능으로 처리됩니다.
             </p>
             <HourlyDragGrid
               dates={dates}
@@ -448,7 +463,7 @@ export default function InvitePage() {
             </div>
 
             <p className="text-sm text-gray-600 mb-4">
-              <strong>{name}</strong>님, 참석 불가능한 시간을 탭하여 선택하세요.
+              <strong>{name}</strong>님, 참석 불가능한 시간을 탭하거나 드래그하여 선택하세요.
               <br />
               <span className="text-gray-400">선택하지 않은 시간 = 참석 가능</span>
             </p>
@@ -492,18 +507,44 @@ function HourlyDragGrid({
   setUnavailableSlots: React.Dispatch<React.SetStateAction<Set<string>>>;
 }) {
   const [activeDate, setActiveDate] = useState(dates[0] || "");
+  const dragRef = useRef<{ active: boolean; paintValue: boolean } | null>(null);
 
   const isUnavailable = (date: string, hour: number) =>
     unavailableSlots.has(slotKey(date, hour));
 
-  const toggleHour = (date: string, hour: number) => {
-    const key = slotKey(date, hour);
+  const applySlot = (key: string, value: boolean) => {
     setUnavailableSlots((prev) => {
+      if (prev.has(key) === value) return prev;
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      if (value) next.add(key);
+      else next.delete(key);
       return next;
     });
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const cell = target.closest("[data-slot-key]") as HTMLElement | null;
+    if (!cell) return;
+    const key = cell.dataset.slotKey!;
+    const paintValue = !unavailableSlots.has(key);
+    dragRef.current = { active: true, paintValue };
+    applySlot(key, paintValue);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current?.active) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if (!el) return;
+    const cell = el.closest("[data-slot-key]") as HTMLElement | null;
+    if (!cell) return;
+    applySlot(cell.dataset.slotKey!, dragRef.current.paintValue);
+  };
+
+  const handlePointerUp = () => {
+    dragRef.current = null;
   };
 
   const toggleAllDay = (date: string) => {
@@ -561,9 +602,7 @@ function HourlyDragGrid({
       {/* Quick actions */}
       <div className="flex justify-between items-center mb-3">
         <p className="text-sm text-gray-500">
-          {countForDate(activeDate) === 0
-            ? "불가능한 시간을 탭하세요"
-            : `${countForDate(activeDate)}시간 불가로 선택됨`}
+          탭하거나 드래그해서 불가 시간 선택
         </p>
         <button
           type="button"
@@ -574,8 +613,13 @@ function HourlyDragGrid({
         </button>
       </div>
 
-      {/* Hour list grouped by time of day */}
-      <div>
+      {/* Hour grid — drag-enabled container */}
+      <div
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        style={{ touchAction: "none" }}
+      >
         {TIME_GROUPS.map((group) => (
           <div key={group.label} className="mb-3">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-1">
@@ -584,22 +628,22 @@ function HourlyDragGrid({
             <div className="grid grid-cols-2 gap-1.5">
               {group.hours.map((hour) => {
                 const unavail = isUnavailable(activeDate, hour);
+                const key = slotKey(activeDate, hour);
                 return (
-                  <button
+                  <div
                     key={hour}
-                    type="button"
-                    onClick={() => toggleHour(activeDate, hour)}
-                    className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors text-left ${
+                    data-slot-key={key}
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl select-none cursor-pointer ${
                       unavail
                         ? "bg-red-50 border-2 border-red-300 text-red-700"
-                        : "bg-gray-50 border-2 border-transparent text-gray-700 active:bg-gray-100"
+                        : "bg-gray-50 border-2 border-transparent text-gray-700"
                     }`}
                   >
-                    <span className="text-sm font-medium">{hour}:00</span>
-                    <span className={`text-xs font-medium ${unavail ? "text-red-500" : "text-gray-300"}`}>
+                    <span className="text-sm font-medium pointer-events-none">{hour}:00</span>
+                    <span className={`text-xs font-medium pointer-events-none ${unavail ? "text-red-500" : "text-gray-300"}`}>
                       {unavail ? "불가" : "가능"}
                     </span>
-                  </button>
+                  </div>
                 );
               })}
             </div>
