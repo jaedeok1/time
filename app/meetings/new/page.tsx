@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, AlertCircle } from "lucide-react";
 
 function getToday(): string {
   const d = new Date();
@@ -74,54 +74,48 @@ function DateRangePicker({
 
   const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
   const MONTHS = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
-
   const cells: (number | null)[] = [
     ...Array(firstDow).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
   return (
-    <div className="border border-black">
+    <div className="bg-base neu-card overflow-hidden">
       {/* Month nav */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-black">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-base/40">
         <button
           type="button"
           onClick={prevMonth}
-          className="p-1 hover:bg-black hover:text-white transition-colors duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+          className="w-9 h-9 rounded-xl bg-base neu-raised-sm flex items-center justify-center hover:-translate-y-0.5 transition-transform duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4 text-muted" />
         </button>
-        <span className="font-mono text-sm tracking-widest">
-          {viewYear}.{String(viewMonth + 1).padStart(2, "0")}
+        <span className="font-display font-semibold text-fore">
+          {viewYear}년 {MONTHS[viewMonth]}
         </span>
         <button
           type="button"
           onClick={nextMonth}
-          className="p-1 hover:bg-black hover:text-white transition-colors duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+          className="w-9 h-9 rounded-xl bg-base neu-raised-sm flex items-center justify-center hover:-translate-y-0.5 transition-transform duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4 text-muted" />
         </button>
       </div>
 
-      <div className="p-3">
+      <div className="p-5">
         {/* Weekday headers */}
-        <div className="grid grid-cols-7 mb-1">
-          {WEEKDAYS.map((w, i) => (
-            <div
-              key={w}
-              className={`text-center font-mono text-xs py-1 tracking-widest ${
-                i === 0 ? "text-dim" : i === 6 ? "text-dim" : "text-dim"
-              }`}
-            >
+        <div className="grid grid-cols-7 mb-2">
+          {WEEKDAYS.map((w) => (
+            <div key={w} className="text-center text-xs font-semibold text-muted py-1">
               {w}
             </div>
           ))}
         </div>
 
-        {/* Days */}
-        <div className="grid grid-cols-7">
+        {/* Day cells */}
+        <div className="grid grid-cols-7 gap-1">
           {cells.map((day, idx) => {
-            if (day === null) return <div key={`e-${idx}`} className="h-9" />;
+            if (day === null) return <div key={`e-${idx}`} className="h-10" />;
 
             const ymd = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
             const isPast = ymd < minDate;
@@ -130,29 +124,41 @@ function DateRangePicker({
             const isPreviewEnd = phase === "end" && ymd === previewEnd && !isEnd;
             const inRange = !!(startDate && previewEnd && ymd > startDate && ymd < previewEnd);
 
-            let cellClass = "";
+            let dayClass = "";
+            let spanStyle: React.CSSProperties = {};
+
             if (isStart || isEnd) {
-              cellClass = "bg-black text-white";
+              dayClass = "text-white font-bold";
+              spanStyle = {
+                background: "#6C63FF",
+                boxShadow: "inset 3px 3px 6px rgba(0,0,0,0.15), inset -3px -3px 6px rgba(255,255,255,0.1)",
+              };
             } else if (isPreviewEnd) {
-              cellClass = "bg-black/30 text-black";
+              dayClass = "text-accent font-semibold";
+              spanStyle = {
+                background: "rgba(108,99,255,0.15)",
+                boxShadow: "inset 2px 2px 4px rgb(163 177 198 / 0.4), inset -2px -2px 4px rgba(255,255,255,0.4)",
+              };
             } else if (inRange) {
-              cellClass = "bg-black/10 text-black";
+              dayClass = "text-accent";
+              spanStyle = { background: "rgba(108,99,255,0.08)" };
             } else if (!isPast) {
-              cellClass = "hover:bg-black/10";
+              dayClass = "text-fore hover:text-accent";
             }
 
             return (
               <div
                 key={ymd}
-                className={`h-9 flex items-center justify-center ${isPast ? "cursor-default" : "cursor-pointer"}`}
+                className={`h-10 flex items-center justify-center ${isPast ? "cursor-default" : "cursor-pointer"}`}
                 onClick={() => !isPast && handleClick(ymd)}
                 onMouseEnter={() => !isPast && setHoverDate(ymd)}
                 onMouseLeave={() => setHoverDate("")}
               >
                 <span
-                  className={`w-8 h-8 flex items-center justify-center font-mono text-sm select-none transition-colors duration-100 ${
-                    isPast ? "text-black/20" : ""
-                  } ${cellClass}`}
+                  className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm select-none transition-all duration-200 ${
+                    isPast ? "text-muted/30" : ""
+                  } ${dayClass}`}
+                  style={spanStyle}
                 >
                   {day}
                 </span>
@@ -163,20 +169,20 @@ function DateRangePicker({
       </div>
 
       {/* Status bar */}
-      <div className="px-4 py-2.5 border-t border-black text-xs font-mono min-h-[36px] flex items-center justify-between">
+      <div className="px-6 py-3 bg-base neu-inset-sm mx-4 mb-4 rounded-2xl text-sm flex items-center justify-between min-h-[44px]">
         {!startDate ? (
-          <span className="tracking-wide">시작일을 선택하세요</span>
+          <span className="text-muted">시작일을 선택하세요</span>
         ) : !endDate ? (
-          <span className="tracking-wide">종료일을 선택하세요</span>
+          <span className="text-accent font-medium">종료일을 선택하세요</span>
         ) : (
           <>
-            <span>
+            <span className="text-fore font-medium">
               {formatShort(startDate)} — {formatShort(endDate)}
             </span>
             <button
               type="button"
               onClick={() => { onRangeChange("", ""); setPhase("start"); }}
-              className="underline hover:no-underline ml-2 text-dim"
+              className="text-muted hover:text-fore text-xs underline ml-2 transition-colors"
             >
               초기화
             </button>
@@ -191,7 +197,6 @@ export default function NewMeetingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const today = getToday();
 
   const [formData, setFormData] = useState({
@@ -204,9 +209,7 @@ export default function NewMeetingPage() {
     deadline: "",
   });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -250,26 +253,14 @@ export default function NewMeetingPage() {
           deadline: new Date(formData.deadline).toISOString(),
         }),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        setError((data.error || "오류가 발생했습니다.") + (data.detail ? ` [${data.detail}]` : ""));
-        return;
-      }
-
+      if (!res.ok) { setError((data.error || "오류가 발생했습니다.") + (data.detail ? ` [${data.detail}]` : "")); return; }
       try {
-        if (data.token) {
-          localStorage.setItem(`creator-${data.token}`, JSON.stringify({
-            name: formData.name.trim(),
-            phone: formData.phone.trim(),
-          }));
-        }
+        if (data.token) localStorage.setItem(`creator-${data.token}`, JSON.stringify({ name: formData.name.trim(), phone: formData.phone.trim() }));
         const stored = JSON.parse(localStorage.getItem("my-created-meetings") || "[]");
         stored.unshift({ id: data.id, title: formData.title.trim(), createdAt: new Date().toISOString() });
         localStorage.setItem("my-created-meetings", JSON.stringify(stored.slice(0, 50)));
       } catch {}
-
       router.push(`/meetings/${data.id}/manage`);
     } catch {
       setError("서버와 연결할 수 없습니다.");
@@ -279,54 +270,58 @@ export default function NewMeetingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-black">
+    <div className="min-h-screen bg-base">
       {/* Header */}
-      <header className="border-b border-black">
-        <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="font-display text-lg font-bold tracking-widest uppercase hover:opacity-60 transition-opacity duration-100"
-          >
-            시간조율
-          </Link>
-          <Link
-            href="/"
-            className="font-mono text-xs tracking-widest uppercase border-b border-transparent hover:border-black transition-all duration-100 pb-0.5"
-          >
-            ← 홈
-          </Link>
+      <header className="sticky top-0 z-50 bg-base/80 backdrop-blur-sm py-4 px-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="neu-card flex items-center justify-between px-6 py-3">
+            <Link
+              href="/"
+              className="font-display font-bold text-xl text-fore tracking-tight hover:text-accent transition-colors"
+            >
+              시간조율
+            </Link>
+            <Link href="/" className="neu-btn neu-btn-secondary px-4 py-2 text-sm">
+              ← 홈
+            </Link>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-6 py-12">
+      <main className="max-w-2xl mx-auto px-6 py-10">
         {/* Page title */}
-        <div className="mb-10">
-          <p className="font-mono text-xs tracking-widest uppercase text-dim mb-3">
-            New Event
-          </p>
-          <h1 className="font-serif text-4xl font-bold tracking-tight">
+        <div className="text-center mb-10">
+          <div className="w-16 h-16 rounded-2xl bg-base neu-deep flex items-center justify-center mx-auto mb-5">
+            <Calendar size={26} strokeWidth={1.5} className="text-accent" />
+          </div>
+          <h1 className="font-display text-3xl font-extrabold text-fore tracking-tight">
             새 약속 잡기
           </h1>
-          <div className="h-[3px] bg-black mt-4" />
+          <p className="text-muted mt-2">정보를 입력하고 약속을 만들어보세요</p>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="border-l-4 border-black bg-muted px-5 py-3 mb-8">
-            <p className="text-sm font-mono">⚠ {error}</p>
+          <div className="bg-base neu-inset rounded-2xl px-5 py-4 mb-6 flex items-center gap-3">
+            <AlertCircle size={18} className="text-accent shrink-0" />
+            <p className="text-sm text-fore font-medium">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-10">
-          {/* Section: 주최자 */}
-          <div>
-            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-6">
-              01 — 주최자 정보
-            </p>
-            <div className="space-y-6">
+        <form onSubmit={handleSubmit}>
+          {/* Card: 주최자 */}
+          <div className="neu-card p-7 mb-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 rounded-xl bg-base neu-deep flex items-center justify-center">
+                <span className="font-display text-xs font-bold text-accent">01</span>
+              </div>
+              <h2 className="font-display font-bold text-fore">주최자 정보</h2>
+            </div>
+
+            <div className="space-y-5">
               <div>
-                <label className="block font-mono text-xs tracking-widest uppercase mb-3">
-                  이름 <span className="text-dim">*</span>
+                <label className="block text-sm font-semibold text-fore mb-2">
+                  이름 <span className="text-accent">*</span>
                 </label>
                 <input
                   type="text"
@@ -334,12 +329,12 @@ export default function NewMeetingPage() {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="홍길동"
-                  className="w-full border-b-2 border-black bg-transparent py-3 text-base placeholder:text-dim/50 focus:outline-none focus:border-b-4 transition-all duration-100"
+                  className="neu-input"
                 />
               </div>
               <div>
-                <label className="block font-mono text-xs tracking-widest uppercase mb-3">
-                  전화번호 <span className="text-dim">*</span>
+                <label className="block text-sm font-semibold text-fore mb-2">
+                  전화번호 <span className="text-accent">*</span>
                 </label>
                 <input
                   type="tel"
@@ -347,23 +342,25 @@ export default function NewMeetingPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="01012345678"
-                  className="w-full border-b-2 border-black bg-transparent py-3 text-base placeholder:text-dim/50 focus:outline-none focus:border-b-4 transition-all duration-100 font-mono"
+                  className="neu-input"
                 />
               </div>
             </div>
           </div>
 
-          <div className="h-px bg-subtle" />
+          {/* Card: 약속 정보 */}
+          <div className="neu-card p-7 mb-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 rounded-xl bg-base neu-deep flex items-center justify-center">
+                <span className="font-display text-xs font-bold text-accent">02</span>
+              </div>
+              <h2 className="font-display font-bold text-fore">약속 정보</h2>
+            </div>
 
-          {/* Section: 약속 정보 */}
-          <div>
-            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-6">
-              02 — 약속 정보
-            </p>
-            <div className="space-y-6">
+            <div className="space-y-5">
               <div>
-                <label className="block font-mono text-xs tracking-widest uppercase mb-3">
-                  약속 이름 <span className="text-dim">*</span>
+                <label className="block text-sm font-semibold text-fore mb-2">
+                  약속 이름 <span className="text-accent">*</span>
                 </label>
                 <input
                   type="text"
@@ -371,12 +368,12 @@ export default function NewMeetingPage() {
                   value={formData.title}
                   onChange={handleChange}
                   placeholder="예: 팀 회식, 스터디, 동창 모임"
-                  className="w-full border-b-2 border-black bg-transparent py-3 text-base placeholder:text-dim/50 focus:outline-none focus:border-b-4 transition-all duration-100"
+                  className="neu-input"
                 />
               </div>
               <div>
-                <label className="block font-mono text-xs tracking-widest uppercase mb-3">
-                  약속 설명 <span className="text-dim">(선택)</span>
+                <label className="block text-sm font-semibold text-fore mb-2">
+                  약속 설명 <span className="text-muted font-normal">(선택)</span>
                 </label>
                 <textarea
                   name="description"
@@ -384,19 +381,23 @@ export default function NewMeetingPage() {
                   onChange={handleChange}
                   placeholder="모임에 대한 간단한 설명을 입력하세요"
                   rows={3}
-                  className="w-full border-b-2 border-black bg-transparent py-3 text-base placeholder:text-dim/50 focus:outline-none focus:border-b-4 transition-all duration-100 resize-none"
+                  className="neu-input resize-none"
+                  style={{ height: "auto" }}
                 />
               </div>
             </div>
           </div>
 
-          <div className="h-px bg-subtle" />
-
-          {/* Section: 기간 */}
-          <div>
-            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-6">
-              03 — 약속 기간 <span className="text-black">*</span>
-            </p>
+          {/* Card: 기간 */}
+          <div className="neu-card p-7 mb-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 rounded-xl bg-base neu-deep flex items-center justify-center">
+                <span className="font-display text-xs font-bold text-accent">03</span>
+              </div>
+              <h2 className="font-display font-bold text-fore">
+                약속 기간 <span className="text-accent">*</span>
+              </h2>
+            </div>
             <DateRangePicker
               startDate={formData.startDate}
               endDate={formData.endDate}
@@ -405,32 +406,33 @@ export default function NewMeetingPage() {
             />
           </div>
 
-          <div className="h-px bg-subtle" />
-
-          {/* Section: 마감일 */}
-          <div>
-            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-6">
-              04 — 응답 마감일 <span className="text-black">*</span>
-            </p>
+          {/* Card: 마감일 */}
+          <div className="neu-card p-7 mb-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 rounded-xl bg-base neu-deep flex items-center justify-center">
+                <span className="font-display text-xs font-bold text-accent">04</span>
+              </div>
+              <h2 className="font-display font-bold text-fore">
+                응답 마감일 <span className="text-accent">*</span>
+              </h2>
+            </div>
             <input
               type="date"
               name="deadline"
               value={formData.deadline}
               onChange={handleChange}
               min={today}
-              className="w-full border-b-2 border-black bg-transparent py-3 text-base focus:outline-none focus:border-b-4 transition-all duration-100 font-mono"
+              className="neu-input"
             />
-            <p className="font-mono text-xs text-dim mt-3 tracking-wide">
+            <p className="text-xs text-muted mt-3 ml-1">
               이 날짜까지 참가자들이 응답할 수 있습니다.
             </p>
           </div>
 
-          <div className="h-[3px] bg-black" />
-
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white py-4 text-sm font-bold tracking-widest uppercase hover:bg-white hover:text-black border-2 border-black transition-colors duration-100 disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:outline-offset-2"
+            className="neu-btn neu-btn-primary w-full py-5 text-base"
           >
             {loading ? "생성 중..." : "약속 잡기 →"}
           </button>

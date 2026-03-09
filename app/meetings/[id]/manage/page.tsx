@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Copy, CheckCircle, RefreshCw } from "lucide-react";
+import { Copy, CheckCircle, RefreshCw, Users, Share2 } from "lucide-react";
 
 interface Participant {
   id: string;
@@ -43,24 +43,18 @@ function formatSlotLabel(timeSlot: string): string {
 }
 
 function toLocalDate(dateStr: string): Date {
-  const ymd = dateStr.split("T")[0];
-  return new Date(ymd + "T00:00:00");
+  return new Date(dateStr.split("T")[0] + "T00:00:00");
 }
 
 function formatDate(dateStr: string): string {
   return toLocalDate(dateStr).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "short",
+    year: "numeric", month: "long", day: "numeric", weekday: "short",
   });
 }
 
 function formatDateShort(dateStr: string): string {
   return toLocalDate(dateStr).toLocaleDateString("ko-KR", {
-    month: "long",
-    day: "numeric",
-    weekday: "short",
+    month: "long", day: "numeric", weekday: "short",
   });
 }
 
@@ -95,8 +89,8 @@ function TimeView({
 
   return (
     <div>
-      {/* Date tabs */}
-      <div className="flex gap-px overflow-x-auto pb-2 mb-6 border border-black">
+      {/* Date tab track — inset pill */}
+      <div className="bg-base neu-deep rounded-2xl p-1.5 flex gap-1 overflow-x-auto mb-6">
         {dates.map((date) => {
           const d = new Date(date + "T00:00:00");
           const isActive = date === activeDate;
@@ -104,50 +98,59 @@ function TimeView({
             <button
               key={date}
               onClick={() => setTimeViewDate(date)}
-              className={`shrink-0 flex flex-col items-center px-4 py-3 transition-colors duration-100 min-w-[56px] ${
-                isActive ? "bg-black text-white" : "bg-white text-black hover:bg-muted"
+              className={`shrink-0 flex flex-col items-center px-4 py-2.5 rounded-xl transition-all duration-300 min-w-[56px] ${
+                isActive
+                  ? "bg-base neu-raised-sm text-fore"
+                  : "text-muted hover:text-fore"
               }`}
             >
-              <span className="font-mono text-xs">
+              <span className="text-xs font-medium">
                 {WEEKDAY_NAMES[d.getDay()]}
               </span>
-              <span className="font-mono text-sm font-bold">{d.getMonth() + 1}/{d.getDate()}</span>
+              <span className="text-sm font-bold tabular-nums">
+                {d.getMonth() + 1}/{d.getDate()}
+              </span>
             </button>
           );
         })}
       </div>
 
       {/* Hour rows */}
-      <div className="divide-y divide-subtle">
+      <div className="space-y-2">
         {HOURS_ALL.map((hour) => {
           const unavailable = meeting.participants.filter((p) =>
             p.unavailableSlots.some((s) => s.date === activeDate && s.timeSlot === String(hour))
           );
-          const available = meeting.participants.filter((p) =>
-            !p.unavailableSlots.some((s) => s.date === activeDate && s.timeSlot === String(hour))
-          );
           const total = meeting.totalParticipants;
-          const availCount = available.length;
+          const availCount = total - unavailable.length;
           const ratio = total > 0 ? availCount / total : 0;
 
           return (
-            <div key={hour} className="flex items-center gap-4 py-2.5">
-              <span className="font-mono text-xs text-dim w-10 shrink-0 tabular-nums">
+            <div key={hour} className="flex items-center gap-4 px-1">
+              <span className="font-display text-xs text-muted w-10 shrink-0 tabular-nums">
                 {hour}:00
               </span>
               <div className="flex-1 flex items-center gap-3">
-                <div className="flex-1 h-1.5 bg-subtle">
+                {/* Progress track — inset */}
+                <div className="flex-1 h-2 bg-base neu-inset-sm rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-black transition-all duration-100"
-                    style={{ width: `${ratio * 100}%` }}
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${ratio * 100}%`,
+                      background: ratio > 0.8
+                        ? "#38B2AC"
+                        : ratio > 0.5
+                        ? "#6C63FF"
+                        : "#A0AEC0",
+                    }}
                   />
                 </div>
-                <span className="font-mono text-xs tabular-nums w-12 text-right text-dim">
+                <span className="font-display text-xs tabular-nums text-muted w-14 text-right">
                   {availCount}/{total}명
                 </span>
               </div>
               {unavailable.length > 0 && (
-                <p className="font-mono text-xs text-dim hidden sm:block truncate max-w-[140px]">
+                <p className="text-xs text-muted hidden sm:block truncate max-w-[120px]">
                   {unavailable.map((p) => p.name).join(", ")}
                 </p>
               )}
@@ -179,11 +182,8 @@ export default function ManagePage() {
     try {
       const res = await fetch(`/api/meetings/${id}`);
       const data = await res.json();
-      if (res.ok) {
-        setMeeting(data);
-      } else {
-        setError(data.error || "약속 정보를 가져올 수 없습니다.");
-      }
+      if (res.ok) setMeeting(data);
+      else setError(data.error || "약속 정보를 가져올 수 없습니다.");
     } catch {
       setError("서버와 연결할 수 없습니다.");
     } finally {
@@ -208,15 +208,10 @@ export default function ManagePage() {
     if (typeof navigator !== "undefined" && navigator.share) {
       try { await navigator.share({ title: meeting.title, text }); return; } catch {}
     }
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
+    try { await navigator.clipboard.writeText(text); } catch {
       const ta = document.createElement("textarea");
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
     }
     setSharedConfirm(true);
     setTimeout(() => setSharedConfirm(false), 2000);
@@ -224,26 +219,19 @@ export default function ManagePage() {
 
   const handleCopyLink = async () => {
     if (!inviteLink) return;
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = inviteLink;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    try { await navigator.clipboard.writeText(inviteLink); }
+    catch {
+      const ta = document.createElement("textarea");
+      ta.value = inviteLink; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleConfirm = async () => {
     if (!selectedSlot || !meeting) return;
-    setConfirming(true);
-    setConfirmError("");
+    setConfirming(true); setConfirmError("");
     try {
       const res = await fetch(`/api/meetings/${id}/confirm`, {
         method: "POST",
@@ -251,25 +239,18 @@ export default function ManagePage() {
         body: JSON.stringify({ date: selectedSlot.date, timeSlot: selectedSlot.timeSlot }),
       });
       const data = await res.json();
-      if (res.ok) {
-        await fetchMeeting();
-        setSelectedSlot(null);
-      } else {
-        setConfirmError(data.error || "약속 확정 중 오류가 발생했습니다.");
-      }
-    } catch {
-      setConfirmError("서버와 연결할 수 없습니다.");
-    } finally {
-      setConfirming(false);
-    }
+      if (res.ok) { await fetchMeeting(); setSelectedSlot(null); }
+      else setConfirmError(data.error || "약속 확정 중 오류가 발생했습니다.");
+    } catch { setConfirmError("서버와 연결할 수 없습니다."); }
+    finally { setConfirming(false); }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="flex items-center gap-3 font-mono text-sm text-dim tracking-widest uppercase">
-          <RefreshCw className="w-4 h-4 animate-spin" strokeWidth={1.5} />
-          불러오는 중
+      <div className="min-h-screen bg-base flex items-center justify-center">
+        <div className="neu-card p-8 flex items-center gap-3">
+          <RefreshCw size={18} className="animate-spin text-accent" strokeWidth={2} />
+          <span className="text-fore font-medium">불러오는 중...</span>
         </div>
       </div>
     );
@@ -277,10 +258,10 @@ export default function ManagePage() {
 
   if (error || !meeting) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center px-6">
-          <p className="font-mono text-sm mb-6">{error || "약속을 찾을 수 없습니다."}</p>
-          <Link href="/" className="font-mono text-xs tracking-widest uppercase border-b border-black pb-0.5 hover:opacity-60 transition-opacity duration-100">
+      <div className="min-h-screen bg-base flex items-center justify-center px-6">
+        <div className="neu-card p-10 text-center max-w-sm w-full">
+          <p className="text-fore mb-6">{error || "약속을 찾을 수 없습니다."}</p>
+          <Link href="/" className="neu-btn neu-btn-secondary px-6 py-3 text-sm">
             홈으로 돌아가기
           </Link>
         </div>
@@ -293,196 +274,183 @@ export default function ManagePage() {
     : meeting.optimalSlots.slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-white text-black">
+    <div className="min-h-screen bg-base">
       {/* Header */}
-      <header className="border-b border-black">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="font-display text-lg font-bold tracking-widest uppercase hover:opacity-60 transition-opacity duration-100"
-          >
-            시간조율
-          </Link>
-          <span className="font-mono text-xs text-dim tracking-widest uppercase flex items-center gap-2">
-            <RefreshCw className="w-3 h-3" strokeWidth={1.5} />
-            10초 자동 갱신
-          </span>
+      <header className="sticky top-0 z-50 bg-base/80 backdrop-blur-sm py-4 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="neu-card flex items-center justify-between px-6 py-3">
+            <Link href="/" className="font-display font-bold text-xl text-fore tracking-tight hover:text-accent transition-colors">
+              시간조율
+            </Link>
+            <span className="flex items-center gap-2 text-xs text-muted">
+              <RefreshCw size={12} className="text-muted" />
+              10초 자동 갱신
+            </span>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-12 space-y-0">
+      <main className="max-w-5xl mx-auto px-6 py-10 space-y-6">
 
-        {/* ── Meeting title block ── */}
-        <div className="pb-10 border-b border-black">
-          <div className="flex items-start justify-between gap-6">
+        {/* Meeting info card */}
+        <div className="neu-card p-8">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               {meeting.isConfirmed && (
-                <p className="font-mono text-xs tracking-widest uppercase mb-3">
-                  ✓ 확정됨
-                </p>
+                <span className="inline-flex items-center gap-1.5 bg-base neu-raised-sm rounded-full px-3 py-1 text-xs font-semibold text-success mb-3">
+                  <CheckCircle size={12} />
+                  확정됨
+                </span>
               )}
-              <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
+              <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-fore tracking-tight leading-tight">
                 {meeting.title}
               </h1>
               {meeting.description && (
-                <p className="text-dim mt-2 leading-relaxed">{meeting.description}</p>
+                <p className="text-muted mt-2">{meeting.description}</p>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-8 mt-8">
-            <div>
-              <p className="font-mono text-xs tracking-widest uppercase text-dim mb-1">기간</p>
-              <p className="text-sm font-medium">
-                {formatDateShort(meeting.startDate)} — {formatDateShort(meeting.endDate)}
-              </p>
-            </div>
-            <div>
-              <p className="font-mono text-xs tracking-widest uppercase text-dim mb-1">마감</p>
-              <p className="text-sm font-medium">{formatDate(meeting.deadline)}</p>
-            </div>
-            <div>
-              <p className="font-mono text-xs tracking-widest uppercase text-dim mb-1">응답</p>
-              <p className="text-sm font-medium">{meeting.totalParticipants}명</p>
-            </div>
+          <div className="grid grid-cols-3 gap-6 mt-6">
+            {[
+              { label: "기간", value: `${formatDateShort(meeting.startDate)} — ${formatDateShort(meeting.endDate)}` },
+              { label: "마감", value: formatDate(meeting.deadline) },
+              { label: "응답", value: `${meeting.totalParticipants}명` },
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-base neu-inset-sm rounded-2xl p-4">
+                <p className="text-xs text-muted font-semibold uppercase tracking-wide mb-1">{label}</p>
+                <p className="text-sm font-medium text-fore">{value}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* ── Confirmed banner (inverted) ── */}
+        {/* Confirmed banner */}
         {meeting.isConfirmed && meeting.confirmedDate && meeting.confirmedSlot && (
-          <div className="relative bg-black text-white overflow-hidden texture-invert">
-            <div className="relative z-10 px-8 py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-              <div>
-                <p className="font-mono text-xs tracking-widest uppercase text-white/50 mb-3">
-                  Confirmed
-                </p>
-                <p className="font-serif text-2xl sm:text-3xl font-bold">
-                  {formatDateShort(meeting.confirmedDate)}
-                </p>
-                <p className="font-mono text-lg mt-1 text-white/70">
-                  {formatSlotLabel(meeting.confirmedSlot)}
-                </p>
-              </div>
-              <button
-                onClick={handleShareConfirm}
-                className="flex items-center gap-2 border border-white/40 text-white px-6 py-3 text-sm font-mono tracking-widest uppercase hover:bg-white hover:text-black transition-colors duration-100 whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
-              >
-                {sharedConfirm ? (
-                  <><CheckCircle className="w-4 h-4" strokeWidth={1.5} /> 복사됨</>
-                ) : (
-                  <><Copy className="w-4 h-4" strokeWidth={1.5} /> 공유하기</>
-                )}
-              </button>
+          <div
+            className="rounded-[32px] p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+            style={{
+              background: "linear-gradient(135deg, #6C63FF, #8B84FF)",
+              boxShadow: "9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)",
+            }}
+          >
+            <div>
+              <p className="text-white/70 text-xs font-semibold uppercase tracking-widest mb-2">
+                Confirmed
+              </p>
+              <p className="text-white text-2xl font-display font-extrabold">
+                {formatDateShort(meeting.confirmedDate)}
+              </p>
+              <p className="text-white/80 font-display text-lg mt-1">
+                {formatSlotLabel(meeting.confirmedSlot)}
+              </p>
             </div>
+            <button
+              onClick={handleShareConfirm}
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-300 hover:-translate-y-0.5 whitespace-nowrap backdrop-blur-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+            >
+              {sharedConfirm
+                ? <><CheckCircle size={16} strokeWidth={2} /> 복사됨</>
+                : <><Share2 size={16} strokeWidth={2} /> 공유하기</>
+              }
+            </button>
           </div>
         )}
 
-        {/* ── Invite link ── */}
-        <div className="py-10 border-b border-black">
-          <p className="font-mono text-xs tracking-widest uppercase text-dim mb-4">
-            초대 링크
-          </p>
-          <div className="flex gap-0 border border-black">
-            <input
-              type="text"
-              value={inviteLink}
-              readOnly
-              className="flex-1 px-4 py-3 text-sm font-mono bg-muted text-dim focus:outline-none min-w-0"
-            />
+        {/* Invite link */}
+        <div className="neu-card p-7">
+          <h2 className="font-display font-bold text-fore mb-4">초대 링크</h2>
+          <div className="flex gap-3">
+            <div className="flex-1 neu-deep rounded-2xl px-4 py-3 text-sm text-muted font-mono truncate min-w-0">
+              {inviteLink}
+            </div>
             <button
               onClick={handleCopyLink}
-              className="shrink-0 flex items-center gap-2 bg-black text-white px-5 py-3 text-xs font-mono tracking-widest uppercase hover:bg-white hover:text-black border-l border-black transition-colors duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+              className="neu-btn neu-btn-secondary px-4 py-3 text-sm shrink-0"
             >
-              {copied ? (
-                <><CheckCircle className="w-3.5 h-3.5" strokeWidth={1.5} /> 복사됨</>
-              ) : (
-                <><Copy className="w-3.5 h-3.5" strokeWidth={1.5} /> 복사</>
-              )}
+              {copied
+                ? <><CheckCircle size={16} strokeWidth={2} className="text-success" /> 복사됨</>
+                : <><Copy size={16} strokeWidth={2} /> 복사</>
+              }
             </button>
           </div>
           <Link
             href={`/invite/${meeting.token}`}
-            className="inline-flex items-center gap-2 mt-4 font-mono text-xs tracking-widest uppercase border-b border-black pb-0.5 hover:opacity-60 transition-opacity duration-100"
+            className="mt-4 w-full neu-btn neu-btn-secondary py-3 text-sm"
           >
             나도 응답하기 →
           </Link>
         </div>
 
-        {/* ── Main content grid ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-black pt-10">
+        {/* Two-column layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Left: Optimal slots */}
-          <div className="lg:pr-10 pb-10 lg:pb-0">
-            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-6">
-              추천 시간대
-            </p>
+          {/* Optimal slots */}
+          <div className="neu-card p-7">
+            <h2 className="font-display font-bold text-fore mb-5">추천 시간대</h2>
 
             {meeting.totalParticipants === 0 ? (
-              <p className="font-mono text-sm text-dim">
-                아직 응답이 없습니다.
-              </p>
+              <div className="neu-deep rounded-2xl p-6 text-center">
+                <p className="text-muted text-sm">아직 응답이 없습니다. 초대 링크를 공유하세요.</p>
+              </div>
             ) : meeting.optimalSlots.length === 0 ? (
-              <p className="font-mono text-sm text-dim">
-                추천할 시간대가 없습니다.
-              </p>
+              <div className="neu-deep rounded-2xl p-6 text-center">
+                <p className="text-muted text-sm">추천할 시간대가 없습니다.</p>
+              </div>
             ) : (
               <>
-                <div className="divide-y divide-subtle border-y border-black">
+                <div className="space-y-2">
                   {displayedSlots.map((slot, index) => {
-                    const isSelected =
-                      selectedSlot?.date === slot.date &&
-                      selectedSlot?.timeSlot === slot.timeSlot;
-                    const isConfirmed =
-                      meeting.isConfirmed &&
-                      meeting.confirmedDate === slot.date &&
-                      meeting.confirmedSlot === slot.timeSlot;
+                    const isSelected = selectedSlot?.date === slot.date && selectedSlot?.timeSlot === slot.timeSlot;
+                    const isConfirmed = meeting.isConfirmed && meeting.confirmedDate === slot.date && meeting.confirmedSlot === slot.timeSlot;
                     const isTop = index === 0;
 
                     return (
                       <button
                         key={`${slot.date}-${slot.timeSlot}`}
-                        onClick={() =>
-                          !meeting.isConfirmed &&
-                          setSelectedSlot(isSelected ? null : slot)
-                        }
-                        className={`w-full flex items-center justify-between px-4 py-4 transition-colors duration-100 text-left group ${
+                        onClick={() => !meeting.isConfirmed && setSelectedSlot(isSelected ? null : slot)}
+                        className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all duration-300 text-left ${
                           isConfirmed
-                            ? "bg-black text-white"
+                            ? "bg-success/10 neu-raised-sm"
                             : isSelected
-                            ? "bg-black text-white"
+                            ? "bg-base neu-deep"
                             : isTop
-                            ? "bg-muted hover:bg-black hover:text-white"
-                            : "bg-white hover:bg-muted"
+                            ? "bg-base neu-raised-sm hover:-translate-y-0.5 hover:shadow-[9px_9px_16px_rgb(163,177,198,0.6),-9px_-9px_16px_rgba(255,255,255,0.5)]"
+                            : "bg-base neu-inset-sm hover:neu-raised-sm"
                         } ${meeting.isConfirmed ? "cursor-default" : "cursor-pointer"}`}
                       >
                         <div className="flex items-center gap-4">
-                          <span className={`font-display text-2xl font-bold leading-none w-8 text-center ${
-                            isConfirmed || isSelected
-                              ? "text-white/40"
-                              : isTop
-                              ? "text-black/30"
-                              : "text-black/20"
-                          }`}>
-                            {index + 1}
-                          </span>
+                          <div
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                              isConfirmed
+                                ? "bg-success/20 neu-inset-sm"
+                                : isTop
+                                ? "bg-base neu-deep"
+                                : "bg-base neu-inset-sm"
+                            }`}
+                          >
+                            <span className={`font-display text-sm font-bold ${
+                              isConfirmed ? "text-success" : isTop ? "text-accent" : "text-muted"
+                            }`}>
+                              {index + 1}
+                            </span>
+                          </div>
                           <div>
-                            <p className="text-sm font-medium">
+                            <p className="text-sm font-semibold text-fore">
                               {formatDateShort(slot.date)}
                             </p>
-                            <p className="font-mono text-xs text-dim group-hover:text-white/60 mt-0.5 transition-colors duration-100">
+                            <p className="text-xs text-muted font-display mt-0.5">
                               {formatSlotLabel(slot.timeSlot)}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-mono text-sm font-bold tabular-nums">
-                            {slot.availableCount}
-                            <span className={`font-normal ml-1 ${
-                              isConfirmed || isSelected ? "text-white/60" : "text-dim"
-                            }`}>
-                              / {meeting.totalParticipants}명
-                            </span>
+                          <p className={`text-sm font-bold font-display ${
+                            isConfirmed ? "text-success" : "text-accent"
+                          }`}>
+                            {slot.availableCount}명
                           </p>
+                          <p className="text-xs text-muted">/{meeting.totalParticipants}명</p>
                         </div>
                       </button>
                     );
@@ -492,29 +460,27 @@ export default function ManagePage() {
                 {meeting.optimalSlots.length > 5 && (
                   <button
                     onClick={() => setShowAllSlots(v => !v)}
-                    className="mt-4 w-full border border-black py-3 text-xs font-mono tracking-widest uppercase hover:bg-black hover:text-white transition-colors duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                    className="mt-3 w-full neu-btn neu-btn-secondary py-3 text-sm"
                   >
-                    {showAllSlots
-                      ? "접기"
-                      : `더보기 (${meeting.optimalSlots.length - 5}개 더)`}
+                    {showAllSlots ? "접기" : `더보기 (${meeting.optimalSlots.length - 5}개)`}
                   </button>
                 )}
 
                 {!meeting.isConfirmed && selectedSlot && (
-                  <div className="mt-6 border-t border-black pt-6">
+                  <div className="mt-5 pt-5 border-t border-base/50">
                     {confirmError && (
-                      <p className="font-mono text-xs text-dim mb-4">⚠ {confirmError}</p>
+                      <p className="text-sm text-muted mb-3">⚠ {confirmError}</p>
                     )}
                     <button
                       onClick={handleConfirm}
                       disabled={confirming}
-                      className="w-full bg-black text-white py-4 text-sm font-mono tracking-widest uppercase hover:bg-white hover:text-black border-2 border-black transition-colors duration-100 disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+                      className="neu-btn neu-btn-primary w-full py-4 text-sm"
                     >
-                      {confirming ? "확정 중..." : "이 시간으로 확정 →"}
+                      <CheckCircle size={16} strokeWidth={2} />
+                      {confirming ? "확정 중..." : "이 시간으로 확정"}
                     </button>
-                    <p className="font-mono text-xs text-dim mt-3 text-center">
-                      {formatDateShort(selectedSlot.date)} ·{" "}
-                      {formatSlotLabel(selectedSlot.timeSlot)}
+                    <p className="text-xs text-muted text-center mt-2">
+                      {formatDateShort(selectedSlot.date)} · {formatSlotLabel(selectedSlot.timeSlot)}
                     </p>
                   </div>
                 )}
@@ -522,22 +488,23 @@ export default function ManagePage() {
             )}
           </div>
 
-          {/* Right: Participant / time tabs */}
-          <div className="lg:pl-10 pt-10 lg:pt-0 border-t border-black lg:border-t-0">
-            {/* Tab switcher */}
-            <div className="flex mb-6">
-              <p className="font-mono text-xs tracking-widest uppercase text-dim flex-1 self-center">
+          {/* Participant / time tab panel */}
+          <div className="neu-card p-7">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-display font-bold text-fore flex items-center gap-2">
+                <Users size={18} strokeWidth={1.5} className="text-accent" />
                 응답 현황 ({meeting.totalParticipants}명)
-              </p>
-              <div className="flex border border-black">
+              </h2>
+              {/* Tab track — inset pill */}
+              <div className="bg-base neu-deep rounded-2xl p-1 flex">
                 {(["person", "time"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setViewTab(tab)}
-                    className={`px-4 py-2 font-mono text-xs tracking-widest uppercase transition-colors duration-100 ${
+                    className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all duration-300 ${
                       viewTab === tab
-                        ? "bg-black text-white"
-                        : "bg-white text-black hover:bg-muted"
+                        ? "bg-base neu-raised-sm text-fore"
+                        : "text-muted hover:text-fore"
                     }`}
                   >
                     {tab === "person" ? "사람별" : "시간별"}
@@ -547,11 +514,11 @@ export default function ManagePage() {
             </div>
 
             {meeting.participants.length === 0 ? (
-              <p className="font-mono text-sm text-dim">
-                아직 응답한 참가자가 없습니다.
-              </p>
+              <div className="neu-deep rounded-2xl p-6 text-center">
+                <p className="text-muted text-sm">아직 응답한 참가자가 없습니다.</p>
+              </div>
             ) : viewTab === "person" ? (
-              <div className="divide-y divide-subtle border-y border-black">
+              <div className="space-y-3">
                 {meeting.participants.map((p) => {
                   const grouped = p.unavailableSlots.reduce<Record<string, string[]>>((acc, s) => {
                     if (!acc[s.date]) acc[s.date] = [];
@@ -561,30 +528,29 @@ export default function ManagePage() {
                   const sortedDates = Object.keys(grouped).sort();
 
                   return (
-                    <div key={p.id} className="py-4">
-                      <div className="flex items-baseline justify-between mb-2">
-                        <div className="flex items-baseline gap-3">
-                          <span className="font-serif font-bold">{p.name}</span>
-                          <span className="font-mono text-xs text-dim">{p.phone}</span>
+                    <div key={p.id} className="bg-base neu-inset-sm rounded-2xl p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-base neu-raised-sm flex items-center justify-center">
+                            <span className="text-xs font-bold text-accent">
+                              {p.name[0]}
+                            </span>
+                          </div>
+                          <span className="text-sm font-semibold text-fore">{p.name}</span>
+                          <span className="text-xs text-muted">{p.phone}</span>
                         </div>
-                        <span className="font-mono text-xs text-dim tabular-nums">
-                          불가 {p.unavailableSlots.length}h
+                        <span className="text-xs text-muted">
+                          불가 {p.unavailableSlots.length}시간
                         </span>
                       </div>
                       {sortedDates.length === 0 ? (
-                        <p className="font-mono text-xs text-dim">모든 시간 가능</p>
+                        <p className="text-xs text-success font-medium">모든 시간 가능</p>
                       ) : (
-                        <div className="space-y-1">
+                        <div className="space-y-1 mt-2">
                           {sortedDates.map((date) => (
-                            <div key={date} className="font-mono text-xs text-dim">
-                              <span className="text-black font-medium">
-                                {formatDateShort(date)}:
-                              </span>{" "}
-                              {grouped[date]
-                                .map(Number)
-                                .sort((a, b) => a - b)
-                                .map((h) => `${h}:00`)
-                                .join(", ")}
+                            <div key={date} className="text-xs text-muted">
+                              <span className="text-fore font-medium">{formatDateShort(date)}:</span>{" "}
+                              {grouped[date].map(Number).sort((a, b) => a - b).map((h) => `${h}:00`).join(", ")}
                             </div>
                           ))}
                         </div>

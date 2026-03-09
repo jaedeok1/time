@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
 
 interface Meeting {
   id: string;
@@ -30,8 +30,7 @@ function slotKey(date: string, hour: number) {
 }
 
 function toLocalDate(dateStr: string): Date {
-  const ymd = dateStr.split("T")[0];
-  return new Date(ymd + "T00:00:00");
+  return new Date(dateStr.split("T")[0] + "T00:00:00");
 }
 
 function getDateRange(startDate: string, endDate: string): string[] {
@@ -50,26 +49,19 @@ function getDateRange(startDate: string, endDate: string): string[] {
 
 function formatDateShort(dateStr: string): string {
   return toLocalDate(dateStr).toLocaleDateString("ko-KR", {
-    month: "long",
-    day: "numeric",
-    weekday: "short",
+    month: "long", day: "numeric", weekday: "short",
   });
 }
 
 function formatDate(dateStr: string): string {
   return toLocalDate(dateStr).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "short",
+    year: "numeric", month: "long", day: "numeric", weekday: "short",
   });
 }
 
-function formatHour(h: number) {
-  return `${h}:00`;
-}
+function formatHour(h: number) { return `${h}:00`; }
 
-/* ─── HourlyDragGrid ────────────────────────────────────────────────── */
+/* ─── HourlyDragGrid ─────────────────────────────────────── */
 
 const TIME_GROUPS = [
   { label: "새벽", hours: [0, 1, 2, 3, 4, 5] },
@@ -145,8 +137,8 @@ function HourlyDragGrid({
 
   return (
     <div>
-      {/* Date tabs */}
-      <div className="flex gap-px overflow-x-auto pb-2 mb-6 border border-black">
+      {/* Date tab track — inset pill container */}
+      <div className="bg-base neu-deep rounded-2xl p-1.5 flex gap-1 overflow-x-auto mb-5">
         {dates.map((date) => {
           const d = new Date(date + "T00:00:00");
           const count = countForDate(date);
@@ -156,16 +148,20 @@ function HourlyDragGrid({
               key={date}
               type="button"
               onClick={() => setActiveDate(date)}
-              className={`shrink-0 flex flex-col items-center px-4 py-3 transition-colors duration-100 min-w-[56px] relative ${
-                isActive ? "bg-black text-white" : "bg-white text-black hover:bg-muted"
+              className={`shrink-0 flex flex-col items-center px-4 py-2.5 rounded-xl transition-all duration-300 min-w-[56px] ${
+                isActive
+                  ? "bg-base neu-raised-sm text-fore"
+                  : "text-muted hover:text-fore"
               }`}
             >
-              <span className="font-mono text-xs">
-                {WEEKDAY_NAMES[d.getDay()]}
+              <span className="text-xs font-medium">{WEEKDAY_NAMES[d.getDay()]}</span>
+              <span className="text-sm font-bold tabular-nums">
+                {d.getMonth() + 1}/{d.getDate()}
               </span>
-              <span className="font-mono text-sm font-bold">{d.getMonth() + 1}/{d.getDate()}</span>
               {count > 0 && (
-                <span className={`font-mono text-xs mt-0.5 ${isActive ? "text-white/50" : "text-dim"}`}>
+                <span className={`text-xs mt-0.5 font-display font-semibold ${
+                  isActive ? "text-accent" : "text-muted"
+                }`}>
                   {count}
                 </span>
               )}
@@ -175,22 +171,22 @@ function HourlyDragGrid({
       </div>
 
       {/* Quick actions */}
-      <div className="flex justify-between items-center mb-4">
-        <p className="font-mono text-xs text-dim tracking-wide">
+      <div className="flex items-center justify-between mb-4 px-1">
+        <p className="text-sm text-muted">
           {countForDate(activeDate) === 0
-            ? "탭하거나 드래그해서 선택"
-            : `${countForDate(activeDate)}시간 불가로 표시`}
+            ? "탭하거나 드래그해서 불가 시간 선택"
+            : `${countForDate(activeDate)}시간 불가로 표시됨`}
         </p>
         <button
           type="button"
           onClick={() => toggleAllDay(activeDate)}
-          className="font-mono text-xs tracking-widest uppercase border-b border-black pb-0.5 hover:opacity-60 transition-opacity duration-100"
+          className="neu-btn neu-btn-secondary px-4 py-2 text-xs"
         >
           {allDaySelected ? "전체 해제" : "하루 전체"}
         </button>
       </div>
 
-      {/* Hour grid */}
+      {/* Tactile hour grid — drag enabled */}
       <div
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -199,10 +195,10 @@ function HourlyDragGrid({
       >
         {TIME_GROUPS.map((group) => (
           <div key={group.label} className="mb-4">
-            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-2">
+            <p className="text-xs font-display font-semibold text-muted uppercase tracking-widest mb-2 px-1">
               {group.label}
             </p>
-            <div className="grid grid-cols-2 gap-px bg-black border border-black">
+            <div className="grid grid-cols-2 gap-2">
               {group.hours.map((hour) => {
                 const unavail = isUnavailable(activeDate, hour);
                 const key = slotKey(activeDate, hour);
@@ -210,17 +206,19 @@ function HourlyDragGrid({
                   <div
                     key={hour}
                     data-slot-key={key}
-                    className={`flex items-center justify-between px-4 py-3 select-none cursor-pointer transition-colors duration-100 ${
+                    className={`flex items-center justify-between px-4 py-3.5 rounded-2xl select-none cursor-pointer transition-all duration-300 ${
                       unavail
-                        ? "bg-black text-white"
-                        : "bg-white text-black hover:bg-muted"
+                        ? "bg-base neu-deep"
+                        : "bg-base neu-raised-sm"
                     }`}
                   >
-                    <span className="font-mono text-sm pointer-events-none tabular-nums">
+                    <span className={`text-sm font-semibold pointer-events-none tabular-nums ${
+                      unavail ? "text-accent" : "text-fore"
+                    }`}>
                       {hour}:00
                     </span>
-                    <span className={`font-mono text-xs pointer-events-none tracking-widest uppercase ${
-                      unavail ? "text-white/60" : "text-subtle"
+                    <span className={`text-xs font-semibold pointer-events-none ${
+                      unavail ? "text-accent" : "text-muted"
                     }`}>
                       {unavail ? "불가" : "가능"}
                     </span>
@@ -235,7 +233,7 @@ function HourlyDragGrid({
   );
 }
 
-/* ─── Main page ──────────────────────────────────────────────────────── */
+/* ─── Main page ──────────────────────────────────────────── */
 
 export default function InvitePage() {
   const params = useParams();
@@ -261,30 +259,19 @@ export default function InvitePage() {
     try {
       const res = await fetch(`/api/invite/${token}`);
       const data = await res.json();
-      if (res.ok) {
-        setMeeting(data);
-      } else {
-        setError(data.error || "약속을 찾을 수 없습니다.");
-      }
-    } catch {
-      setError("서버와 연결할 수 없습니다.");
-    } finally {
-      setLoading(false);
-    }
+      if (res.ok) setMeeting(data);
+      else setError(data.error || "약속을 찾을 수 없습니다.");
+    } catch { setError("서버와 연결할 수 없습니다."); }
+    finally { setLoading(false); }
   }, [token]);
 
   useEffect(() => { fetchMeeting(); }, [fetchMeeting]);
 
-  // Default all slots to unavailable on load
   useEffect(() => {
     if (meeting && !isEditing) {
       const allSlots = new Set<string>();
       const d = getDateRange(meeting.startDate, meeting.endDate);
-      for (const date of d) {
-        for (const h of HOURS) {
-          allSlots.add(slotKey(date, h));
-        }
-      }
+      for (const date of d) for (const h of HOURS) allSlots.add(slotKey(date, h));
       setUnavailableSlots(allSlots);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -293,18 +280,12 @@ export default function InvitePage() {
   useEffect(() => {
     if (!token) return;
     const storedEdit = localStorage.getItem(`editToken-${token}`);
-    if (storedEdit) {
-      setEditToken(storedEdit);
-      setIsEditing(true);
-      setStep(2);
-      return;
-    }
+    if (storedEdit) { setEditToken(storedEdit); setIsEditing(true); setStep(2); return; }
     const storedCreator = localStorage.getItem(`creator-${token}`);
     if (storedCreator) {
       try {
         const { name: cName, phone: cPhone } = JSON.parse(storedCreator);
-        setName(cName || "");
-        setPhone(cPhone || "");
+        setName(cName || ""); setPhone(cPhone || "");
       } catch {}
     }
   }, [token]);
@@ -322,14 +303,12 @@ export default function InvitePage() {
   };
 
   const handleSubmit = async () => {
-    setSubmitError("");
-    setSubmitLoading(true);
+    setSubmitError(""); setSubmitLoading(true);
     try {
       const slotsArray: UnavailableSlot[] = Array.from(unavailableSlots).map((key) => {
         const [date, timeSlot] = key.split("|");
         return { date, timeSlot };
       });
-
       let res: Response;
       if (isEditing && editToken) {
         res = await fetch(`/api/invite/${token}/respond`, {
@@ -338,16 +317,13 @@ export default function InvitePage() {
           body: JSON.stringify({ editToken, unavailableSlots: slotsArray }),
         });
       } else {
-        const normalizedPhone = phone.replace(/[-\s]/g, "");
         res = await fetch(`/api/invite/${token}/respond`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: name.trim(), phone: normalizedPhone, unavailableSlots: slotsArray }),
+          body: JSON.stringify({ name: name.trim(), phone: phone.replace(/[-\s]/g, ""), unavailableSlots: slotsArray }),
         });
       }
-
       const data = await res.json();
-
       if (res.status === 409) {
         setSubmitError("이미 응답하셨습니다.");
         if (data.editToken) { localStorage.setItem(`editToken-${token}`, data.editToken); setEditToken(data.editToken); }
@@ -355,47 +331,44 @@ export default function InvitePage() {
       }
       if (!res.ok) { setSubmitError(data.error || "오류가 발생했습니다."); return; }
       if (data.editToken) { localStorage.setItem(`editToken-${token}`, data.editToken); setEditToken(data.editToken); }
-
       if (!isEditing) {
         try {
           const stored = JSON.parse(localStorage.getItem("my-responded-meetings") || "[]");
-          const alreadyExists = stored.some((m: { token: string }) => m.token === token);
-          if (!alreadyExists && meeting) {
+          if (!stored.some((m: { token: string }) => m.token === token) && meeting) {
             stored.unshift({ token, meetingId: meeting.id, title: meeting.title, respondedAt: new Date().toISOString() });
             localStorage.setItem("my-responded-meetings", JSON.stringify(stored.slice(0, 50)));
           }
         } catch {}
       }
       setSubmitted(true);
-    } catch {
-      setSubmitError("서버와 연결할 수 없습니다.");
-    } finally {
-      setSubmitLoading(false);
-    }
+    } catch { setSubmitError("서버와 연결할 수 없습니다."); }
+    finally { setSubmitLoading(false); }
   };
 
   const handleEditResponse = () => {
-    setIsEditing(true);
-    setSubmitted(false);
-    setStep(2);
-    setUnavailableSlots(new Set());
+    setIsEditing(true); setSubmitted(false); setStep(2); setUnavailableSlots(new Set());
   };
 
   /* ── Loading / Error ── */
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <p className="font-mono text-xs tracking-widest uppercase text-dim">불러오는 중...</p>
+      <div className="min-h-screen bg-base flex items-center justify-center">
+        <div className="neu-card p-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-base neu-raised mx-auto mb-4 flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+          </div>
+          <p className="text-muted text-sm">불러오는 중...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !meeting) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center px-6">
-          <p className="font-mono text-sm mb-6">{error || "약속을 찾을 수 없습니다."}</p>
-          <Link href="/" className="font-mono text-xs tracking-widest uppercase border-b border-black pb-0.5">
+      <div className="min-h-screen bg-base flex items-center justify-center px-6">
+        <div className="neu-card p-10 text-center max-w-sm w-full">
+          <p className="text-fore mb-6">{error || "약속을 찾을 수 없습니다."}</p>
+          <Link href="/" className="neu-btn neu-btn-secondary px-6 py-3 text-sm">
             홈으로 돌아가기
           </Link>
         </div>
@@ -408,93 +381,100 @@ export default function InvitePage() {
   /* ── Submitted ── */
   if (submitted) {
     return (
-      <div className="min-h-screen bg-white">
-        <header className="border-b border-black">
-          <div className="max-w-2xl mx-auto px-6 py-4">
-            <span className="font-display text-lg font-bold tracking-widest uppercase">시간조율</span>
-          </div>
-        </header>
-        <main className="max-w-2xl mx-auto px-6 py-20 text-center">
-          <div className="border border-black p-12">
-            <CheckCircle className="w-10 h-10 mx-auto mb-8" strokeWidth={1} />
-            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-4">
-              {isEditing ? "응답 수정 완료" : "응답 제출 완료"}
-            </p>
-            <h1 className="font-serif text-3xl font-bold mb-3">감사합니다.</h1>
-            <p className="text-dim mb-10">
-              <strong className="text-black">{meeting.title}</strong> 약속에 응답해 주셨습니다.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                href={`/meetings/${meeting.id}/manage`}
-                className="bg-black text-white px-8 py-4 text-sm font-mono tracking-widest uppercase hover:bg-white hover:text-black border-2 border-black transition-colors duration-100"
-              >
-                응답 현황 보기
-              </Link>
-              {editToken && (
-                <button
-                  onClick={handleEditResponse}
-                  className="border-2 border-black text-black px-8 py-4 text-sm font-mono tracking-widest uppercase hover:bg-black hover:text-white transition-colors duration-100"
+      <div className="min-h-screen bg-base flex items-center justify-center px-6">
+        <div className="neu-card p-12 sm:p-16 text-center max-w-md w-full">
+          {/* Nested circle success decoration */}
+          <div className="flex justify-center mb-8">
+            <div className="w-24 h-24 rounded-full bg-base neu-raised flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-base neu-deep flex items-center justify-center">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg, #38B2AC, #4FD1C5)" }}
                 >
-                  수정하기
-                </button>
-              )}
+                  <CheckCircle size={20} strokeWidth={2.5} className="text-white" />
+                </div>
+              </div>
             </div>
           </div>
-        </main>
+
+          <h1 className="font-display text-2xl font-extrabold text-fore mb-2">
+            {isEditing ? "응답이 수정되었습니다!" : "응답이 제출되었습니다!"}
+          </h1>
+          <p className="text-muted mb-8">
+            <strong className="text-fore">{meeting.title}</strong> 약속에 응답해 주셨습니다.
+          </p>
+
+          <div className="flex flex-col gap-3">
+            <Link
+              href={`/meetings/${meeting.id}/manage`}
+              className="neu-btn neu-btn-primary py-4 text-sm"
+            >
+              응답 현황 보기
+            </Link>
+            {editToken && (
+              <button
+                onClick={handleEditResponse}
+                className="neu-btn neu-btn-secondary py-4 text-sm"
+              >
+                응답 수정하기
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
 
   /* ── Main page ── */
   return (
-    <div className="min-h-screen bg-white text-black">
-      <header className="border-b border-black">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="font-display text-lg font-bold tracking-widest uppercase hover:opacity-60 transition-opacity duration-100"
-          >
-            시간조율
-          </Link>
-          <Link
-            href="/"
-            className="font-mono text-xs tracking-widest uppercase border-b border-transparent hover:border-black transition-all duration-100 pb-0.5"
-          >
-            ← 홈
-          </Link>
+    <div className="min-h-screen bg-base">
+      <header className="sticky top-0 z-50 bg-base/80 backdrop-blur-sm py-4 px-6">
+        <div className="max-w-3xl mx-auto">
+          <div className="neu-card flex items-center justify-between px-6 py-3">
+            <Link href="/" className="font-display font-bold text-xl text-fore tracking-tight hover:text-accent transition-colors">
+              시간조율
+            </Link>
+            <Link href="/" className="neu-btn neu-btn-secondary px-4 py-2 text-sm">← 홈</Link>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-12 space-y-0">
+      <main className="max-w-3xl mx-auto px-6 py-10 space-y-6">
 
         {/* Meeting info */}
-        <div className="pb-8 border-b border-black">
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+        <div className="neu-card p-7">
+          <h1 className="font-display text-2xl font-extrabold text-fore tracking-tight mb-2">
             {meeting.title}
           </h1>
           {meeting.description && (
-            <p className="text-dim text-sm mb-4">{meeting.description}</p>
+            <p className="text-muted text-sm mb-4">{meeting.description}</p>
           )}
-          <div className="flex gap-8 mt-4">
-            <div>
-              <p className="font-mono text-xs tracking-widest uppercase text-dim mb-1">기간</p>
-              <p className="text-sm font-medium">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-base neu-inset-sm rounded-2xl p-4">
+              <p className="text-xs text-muted font-semibold uppercase tracking-wide mb-1">기간</p>
+              <p className="text-sm font-medium text-fore">
                 {formatDateShort(meeting.startDate)} — {formatDateShort(meeting.endDate)}
               </p>
             </div>
-            <div>
-              <p className="font-mono text-xs tracking-widest uppercase text-dim mb-1">마감</p>
-              <p className="text-sm font-medium">{formatDate(meeting.deadline)}</p>
+            <div className="bg-base neu-inset-sm rounded-2xl p-4">
+              <p className="text-xs text-muted font-semibold uppercase tracking-wide mb-1">마감</p>
+              <p className="text-sm font-medium text-fore">{formatDate(meeting.deadline)}</p>
             </div>
           </div>
 
           {meeting.isConfirmed && meeting.confirmedDate && meeting.confirmedSlot && (
-            <div className="mt-6 bg-black text-white px-6 py-4 flex items-center gap-3">
-              <CheckCircle className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+            <div className="mt-4 rounded-2xl p-4 flex items-center gap-3"
+              style={{
+                background: "linear-gradient(135deg, rgba(56,178,172,0.15), rgba(79,209,197,0.1))",
+                boxShadow: "inset 4px 4px 8px rgb(163 177 198 / 0.4), inset -4px -4px 8px rgba(255,255,255,0.6)",
+              }}
+            >
+              <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center shrink-0">
+                <CheckCircle size={16} className="text-success" />
+              </div>
               <div>
-                <p className="font-mono text-xs tracking-widest uppercase text-white/50 mb-0.5">확정됨</p>
-                <p className="font-serif text-sm font-bold">
+                <p className="text-xs text-success font-semibold mb-0.5">약속 확정</p>
+                <p className="text-sm font-medium text-fore">
                   {formatDateShort(meeting.confirmedDate)} · {formatHour(parseInt(meeting.confirmedSlot))}
                 </p>
               </div>
@@ -502,59 +482,56 @@ export default function InvitePage() {
           )}
         </div>
 
-        {/* Confirmed — no more responses */}
+        {/* Confirmed — closed */}
         {meeting.isConfirmed ? (
-          <div className="py-16 text-center">
-            <p className="font-mono text-sm text-dim tracking-wide">
-              약속 일정이 확정되어 응답을 받지 않습니다.
-            </p>
+          <div className="neu-card p-10 text-center">
+            <p className="text-muted">약속 일정이 확정되어 응답을 받지 않습니다.</p>
           </div>
 
         /* Editing */
         ) : isEditing ? (
-          <div className="pt-10">
-            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-8">
-              응답 수정
+          <div className="neu-card p-7">
+            <h2 className="font-display font-bold text-fore mb-2">응답 수정</h2>
+            <p className="text-sm text-muted mb-6">
+              불가능한 시간을 탭하거나 드래그하여 선택하세요.
             </p>
-            <p className="text-sm text-dim mb-6">
-              불가능한 시간을 탭하거나 드래그하여 선택하세요.<br />
-              <span className="font-mono text-xs">■ = 불가 &nbsp; □ = 가능</span>
-            </p>
-            <HourlyDragGrid
-              dates={dates}
-              unavailableSlots={unavailableSlots}
-              setUnavailableSlots={setUnavailableSlots}
-            />
+            <HourlyDragGrid dates={dates} unavailableSlots={unavailableSlots} setUnavailableSlots={setUnavailableSlots} />
             {submitError && (
-              <p className="font-mono text-xs mt-4">⚠ {submitError}</p>
+              <div className="neu-inset-sm rounded-2xl px-4 py-3 flex items-center gap-2 mt-4">
+                <AlertCircle size={16} className="text-accent shrink-0" />
+                <p className="text-sm text-fore">{submitError}</p>
+              </div>
             )}
-            <div className="h-[3px] bg-black mt-8 mb-6" />
             <button
               onClick={handleSubmit}
               disabled={submitLoading}
-              className="w-full bg-black text-white py-4 text-sm font-mono tracking-widest uppercase hover:bg-white hover:text-black border-2 border-black transition-colors duration-100 disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+              className="neu-btn neu-btn-primary w-full py-4 text-sm mt-6"
             >
               {submitLoading ? "저장 중..." : "응답 수정 완료 →"}
             </button>
           </div>
 
-        /* Step 1: name / phone */
+        /* Step 1 */
         ) : step === 1 ? (
-          <div className="pt-10">
-            <p className="font-mono text-xs tracking-widest uppercase text-dim mb-8">
-              01 — 참가자 정보
-            </p>
+          <div className="neu-card p-7">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 rounded-xl bg-base neu-deep flex items-center justify-center">
+                <span className="font-display text-xs font-bold text-accent">01</span>
+              </div>
+              <h2 className="font-display font-bold text-fore">참가자 정보</h2>
+            </div>
 
             {namePhoneError && (
-              <div className="border-l-4 border-black bg-muted px-5 py-3 mb-8">
-                <p className="font-mono text-xs">⚠ {namePhoneError}</p>
+              <div className="bg-base neu-inset-sm rounded-2xl px-4 py-3 flex items-center gap-2 mb-5">
+                <AlertCircle size={16} className="text-accent shrink-0" />
+                <p className="text-sm text-fore">{namePhoneError}</p>
               </div>
             )}
 
-            <div className="space-y-8">
+            <div className="space-y-5">
               <div>
-                <label className="block font-mono text-xs tracking-widest uppercase mb-3">
-                  이름 <span className="text-dim">*</span>
+                <label className="block text-sm font-semibold text-fore mb-2">
+                  이름 <span className="text-accent">*</span>
                 </label>
                 <input
                   type="text"
@@ -562,12 +539,12 @@ export default function InvitePage() {
                   onChange={(e) => setName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleNamePhoneNext()}
                   placeholder="이름을 입력하세요"
-                  className="w-full border-b-2 border-black bg-transparent py-3 text-base placeholder:text-dim/50 focus:outline-none focus:border-b-4 transition-all duration-100"
+                  className="neu-input"
                 />
               </div>
               <div>
-                <label className="block font-mono text-xs tracking-widest uppercase mb-3">
-                  전화번호 <span className="text-dim">*</span>
+                <label className="block text-sm font-semibold text-fore mb-2">
+                  전화번호 <span className="text-accent">*</span>
                 </label>
                 <input
                   type="tel"
@@ -575,68 +552,59 @@ export default function InvitePage() {
                   onChange={(e) => setPhone(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleNamePhoneNext()}
                   placeholder="01012345678"
-                  className="w-full border-b-2 border-black bg-transparent py-3 text-base placeholder:text-dim/50 focus:outline-none focus:border-b-4 transition-all duration-100 font-mono"
+                  className="neu-input"
                 />
-                <p className="font-mono text-xs text-dim mt-2">하이픈(-) 없이 숫자만 입력해주세요</p>
+                <p className="text-xs text-muted mt-2 ml-1">하이픈(-) 없이 숫자만 입력해주세요</p>
               </div>
             </div>
 
-            <div className="h-[3px] bg-black mt-10 mb-6" />
-
-            <button
-              onClick={handleNamePhoneNext}
-              className="w-full bg-black text-white py-4 text-sm font-mono tracking-widest uppercase hover:bg-white hover:text-black border-2 border-black transition-colors duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
-            >
+            <button onClick={handleNamePhoneNext} className="neu-btn neu-btn-primary w-full py-4 text-sm mt-7">
               다음 →
             </button>
 
             {editToken && !isEditing && (
-              <button
-                onClick={handleEditResponse}
-                className="w-full mt-3 border-2 border-black text-black py-4 text-sm font-mono tracking-widest uppercase hover:bg-black hover:text-white transition-colors duration-100"
-              >
+              <button onClick={handleEditResponse} className="neu-btn neu-btn-secondary w-full py-4 text-sm mt-3">
                 이전 응답 수정하기
               </button>
             )}
           </div>
 
-        /* Step 2: time selection */
+        /* Step 2 */
         ) : (
-          <div className="pt-10">
-            <div className="flex items-baseline justify-between mb-8">
-              <p className="font-mono text-xs tracking-widest uppercase text-dim">
-                02 — 불가능한 시간 선택
-              </p>
+          <div className="neu-card p-7">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-base neu-deep flex items-center justify-center">
+                  <span className="font-display text-xs font-bold text-accent">02</span>
+                </div>
+                <h2 className="font-display font-bold text-fore">불가능한 시간 선택</h2>
+              </div>
               <button
                 onClick={() => setStep(1)}
-                className="font-mono text-xs tracking-widest uppercase border-b border-transparent hover:border-black transition-all duration-100 pb-0.5 text-dim"
+                className="neu-btn neu-btn-secondary px-3 py-1.5 text-xs"
               >
                 ← 정보 수정
               </button>
             </div>
 
-            <p className="text-sm text-dim mb-6">
-              <strong className="text-black font-serif">{name}</strong>님,
-              참석 불가능한 시간을 탭하거나 드래그하여 선택하세요.<br />
-              <span className="font-mono text-xs">■ = 불가 &nbsp; □ = 가능</span>
+            <p className="text-sm text-muted mb-6 ml-11">
+              <strong className="text-fore">{name}</strong>님,
+              불가능한 시간을 탭하거나 드래그하여 선택하세요.
             </p>
 
-            <HourlyDragGrid
-              dates={dates}
-              unavailableSlots={unavailableSlots}
-              setUnavailableSlots={setUnavailableSlots}
-            />
+            <HourlyDragGrid dates={dates} unavailableSlots={unavailableSlots} setUnavailableSlots={setUnavailableSlots} />
 
             {submitError && (
-              <p className="font-mono text-xs mt-4">⚠ {submitError}</p>
+              <div className="bg-base neu-inset-sm rounded-2xl px-4 py-3 flex items-center gap-2 mt-4">
+                <AlertCircle size={16} className="text-accent shrink-0" />
+                <p className="text-sm text-fore">{submitError}</p>
+              </div>
             )}
-
-            <div className="h-[3px] bg-black mt-8 mb-6" />
 
             <button
               onClick={handleSubmit}
               disabled={submitLoading}
-              className="w-full bg-black text-white py-4 text-sm font-mono tracking-widest uppercase hover:bg-white hover:text-black border-2 border-black transition-colors duration-100 disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black"
+              className="neu-btn neu-btn-primary w-full py-4 text-sm mt-6"
             >
               {submitLoading ? "제출 중..." : "응답 제출 →"}
             </button>

@@ -1,76 +1,169 @@
 @import "tailwindcss";
 
 @theme {
-  /* Typography */
-  --font-display: var(--font-playfair), Georgia, "Times New Roman", serif;
-  --font-serif: var(--font-noto), "Apple SD Gothic Neo", "Malgun Gothic", Georgia, serif;
-  --font-mono: "JetBrains Mono", "SF Mono", Consolas, "Courier New", monospace;
+  --font-display: var(--font-jakarta), "Plus Jakarta Sans", sans-serif;
+  --font-sans: var(--font-noto-sans), "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
 
-  /* Muted tones (black/white is built-in) */
-  --color-muted: #f5f5f5;
-  --color-subtle: #e5e5e5;
-  --color-dim: #525252;
+  --color-base: #E0E5EC;
+  --color-fore: #3D4852;
+  --color-muted: #6B7280;
+  --color-accent: #6C63FF;
+  --color-accent-light: #8B84FF;
+  --color-success: #38B2AC;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-14px); }
 }
 
 @layer base {
-  *,
-  *::before,
-  *::after {
-    border-radius: 0 !important;
-  }
+  html { scroll-behavior: smooth; }
 
   body {
-    background-color: #ffffff;
-    color: #000000;
-    font-family: var(--font-serif);
+    background-color: #E0E5EC;
+    color: #3D4852;
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  input,
-  textarea,
-  button,
-  select {
+  input, textarea, select, button {
     font-family: inherit;
   }
 
-  /* Remove default input/button browser styling */
   input[type="date"]::-webkit-calendar-picker-indicator {
     opacity: 0.4;
     cursor: pointer;
   }
 }
 
-/* Texture overlay — horizontal lines, paper-like quality */
-.texture::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 1px,
-    #000 1px,
-    #000 2px
-  );
-  background-size: 100% 4px;
-  opacity: 0.015;
-  pointer-events: none;
-}
+/* ── Neumorphic component classes ── */
+@layer components {
 
-/* Inverted section texture — white vertical lines on black */
-.texture-invert::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    90deg,
-    transparent,
-    transparent 1px,
-    #fff 1px,
-    #fff 2px
-  );
-  background-size: 4px 100%;
-  opacity: 0.04;
-  pointer-events: none;
+  /* Extruded — element raised from surface */
+  .neu-raised {
+    box-shadow:
+      9px 9px 16px rgb(163 177 198 / 0.6),
+      -9px -9px 16px rgba(255, 255, 255, 0.5);
+  }
+  .neu-raised-sm {
+    box-shadow:
+      5px 5px 10px rgb(163 177 198 / 0.6),
+      -5px -5px 10px rgba(255, 255, 255, 0.5);
+  }
+
+  /* Inset — element pressed into surface */
+  .neu-inset {
+    box-shadow:
+      inset 6px 6px 10px rgb(163 177 198 / 0.6),
+      inset -6px -6px 10px rgba(255, 255, 255, 0.5);
+  }
+  .neu-deep {
+    box-shadow:
+      inset 10px 10px 20px rgb(163 177 198 / 0.7),
+      inset -10px -10px 20px rgba(255, 255, 255, 0.6);
+  }
+  .neu-inset-sm {
+    box-shadow:
+      inset 3px 3px 6px rgb(163 177 198 / 0.6),
+      inset -3px -3px 6px rgba(255, 255, 255, 0.5);
+  }
+
+  /* Card — the primary container */
+  .neu-card {
+    background-color: #E0E5EC;
+    border-radius: 32px;
+    box-shadow:
+      9px 9px 16px rgb(163 177 198 / 0.6),
+      -9px -9px 16px rgba(255, 255, 255, 0.5);
+    transition: box-shadow 300ms ease-out, transform 300ms ease-out;
+  }
+  .neu-card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      12px 12px 20px rgb(163 177 198 / 0.7),
+      -12px -12px 20px rgba(255, 255, 255, 0.6);
+  }
+
+  /* Input — inset well for text entry */
+  .neu-input {
+    background-color: #E0E5EC;
+    border: none;
+    outline: none;
+    border-radius: 16px;
+    color: #3D4852;
+    width: 100%;
+    padding: 14px 18px;
+    box-shadow:
+      inset 6px 6px 10px rgb(163 177 198 / 0.6),
+      inset -6px -6px 10px rgba(255, 255, 255, 0.5);
+    transition: box-shadow 300ms ease-out;
+  }
+  .neu-input::placeholder { color: #A0AEC0; }
+  .neu-input:focus {
+    box-shadow:
+      inset 10px 10px 20px rgb(163 177 198 / 0.7),
+      inset -10px -10px 20px rgba(255, 255, 255, 0.6);
+    outline: 2px solid #6C63FF;
+    outline-offset: 3px;
+  }
+
+  /* Buttons */
+  .neu-btn {
+    border-radius: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 300ms ease-out;
+    box-shadow:
+      5px 5px 10px rgb(163 177 198 / 0.6),
+      -5px -5px 10px rgba(255, 255, 255, 0.5);
+  }
+  .neu-btn:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      9px 9px 16px rgb(163 177 198 / 0.6),
+      -9px -9px 16px rgba(255, 255, 255, 0.5);
+  }
+  .neu-btn:active {
+    transform: translateY(0.5px);
+  }
+  .neu-btn:focus-visible {
+    outline: 2px solid #6C63FF;
+    outline-offset: 3px;
+  }
+  .neu-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .neu-btn-primary {
+    background-color: #6C63FF;
+    color: #ffffff;
+  }
+  .neu-btn-primary:active {
+    box-shadow:
+      inset 3px 3px 6px rgba(0, 0, 0, 0.2),
+      inset -3px -3px 6px rgba(255, 255, 255, 0.1);
+  }
+
+  .neu-btn-secondary {
+    background-color: #E0E5EC;
+    color: #3D4852;
+  }
+  .neu-btn-secondary:active {
+    box-shadow:
+      inset 3px 3px 6px rgb(163 177 198 / 0.6),
+      inset -3px -3px 6px rgba(255, 255, 255, 0.5);
+  }
+
+  /* Float animation */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
 }

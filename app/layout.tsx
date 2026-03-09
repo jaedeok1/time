@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Noto_Serif_KR } from "next/font/google";
+import { Plus_Jakarta_Sans, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 
-const playfair = Playfair_Display({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-playfair",
+  weight: ["500", "600", "700", "800"],
+  variable: "--font-jakarta",
   display: "swap",
 });
 
-const notoSerifKR = Noto_Serif_KR({
+const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
-  weight: ["400", "600", "700", "900"],
-  variable: "--font-noto",
+  weight: ["400", "500", "700"],
+  variable: "--font-noto-sans",
   display: "swap",
 });
 
@@ -26,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${playfair.variable} ${notoSerifKR.variable}`}>
-      <body className="bg-white text-black min-h-screen antialiased">
+    <html lang="ko" className={`${plusJakarta.variable} ${notoSansKR.variable}`}>
+      <body className="bg-base min-h-screen antialiased">
         {children}
       </body>
     </html>
