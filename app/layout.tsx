@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={cn(spaceGrotesk.variable, notoSansKR.variable, "font-sans", geist.variable)}>
+    <html lang="ko" className={cn(spaceGrotesk.variable, notoSansKR.variable, "font-sans", geist.variable, "dark")}>
       <body className="bg-base min-h-screen antialiased">
         {children}
       </body>
