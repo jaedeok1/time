@@ -73,12 +73,6 @@ function formatHour(h: number) {
   return `${h}:00`;
 }
 
-const TIME_GROUPS = [
-  { label: "새벽", hours: [0, 1, 2, 3, 4, 5] },
-  { label: "오전", hours: [6, 7, 8, 9, 10, 11] },
-  { label: "오후", hours: [12, 13, 14, 15, 16, 17] },
-  { label: "저녁", hours: [18, 19, 20, 21, 22, 23] },
-];
 
 function HourlyDragGrid({
   dates,
@@ -136,7 +130,7 @@ function HourlyDragGrid({
         container.setPointerCapture(dragRef.current.pointerId);
         applySlot(dragRef.current.startKey, dragRef.current.paintValue);
       }
-    }, 200);
+    }, 150);
 
     dragRef.current = { paintValue, startKey: key, startX: e.clientX, startY: e.clientY, pointerId: e.pointerId, timer, dragging: false };
   };
@@ -147,7 +141,7 @@ function HourlyDragGrid({
 
     if (!dragging) {
       // Cancel long-press if user scrolls vertically
-      if (Math.abs(e.clientY - startY) > 10) {
+      if (Math.abs(e.clientY - startY) > 5) {
         if (timer) clearTimeout(timer);
         dragRef.current = null;
       }
@@ -253,47 +247,39 @@ function HourlyDragGrid({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         style={{ touchAction: "pan-y" }}
+        className="grid grid-cols-2 gap-2"
       >
-        {TIME_GROUPS.map((group) => (
-          <div key={group.label} className="mb-4">
-            <p className="font-display mb-2 px-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              {group.label}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {group.hours.map((hour) => {
-                const unavail = isUnavailable(activeDate, hour);
-                const key = slotKey(activeDate, hour);
-                return (
-                  <div
-                    key={hour}
-                    data-slot-key={key}
-                    className={cn(
-                      "flex cursor-pointer select-none items-center justify-between rounded-xl px-4 py-3.5 transition-all duration-200",
-                      unavail ? "neu-slot-unavail" : "neu-slot-avail"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "pointer-events-none tabular-nums text-sm font-semibold",
-                        unavail ? "text-primary" : "text-foreground"
-                      )}
-                    >
-                      {hour}:00
-                    </span>
-                    <span
-                      className={cn(
-                        "pointer-events-none text-xs font-semibold",
-                        unavail ? "text-primary/70" : "text-muted-foreground"
-                      )}
-                    >
-                      {unavail ? "불가" : "가능"}
-                    </span>
-                  </div>
-                );
-              })}
+        {HOURS.map((hour) => {
+          const unavail = isUnavailable(activeDate, hour);
+          const key = slotKey(activeDate, hour);
+          return (
+            <div
+              key={hour}
+              data-slot-key={key}
+              className={cn(
+                "flex cursor-pointer select-none items-center justify-between rounded-xl px-4 py-3.5 transition-all duration-200",
+                unavail ? "neu-slot-unavail" : "neu-slot-avail"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none tabular-nums text-sm font-semibold",
+                  unavail ? "text-primary" : "text-foreground"
+                )}
+              >
+                {hour}:00
+              </span>
+              <span
+                className={cn(
+                  "pointer-events-none text-xs font-semibold",
+                  unavail ? "text-primary/70" : "text-muted-foreground"
+                )}
+              >
+                {unavail ? "불가" : "가능"}
+              </span>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
