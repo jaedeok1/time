@@ -397,7 +397,7 @@ export default function NewMeetingPage() {
                   onChange={handleChange}
                   placeholder="모임에 대한 간단한 설명을 입력하세요"
                   rows={3}
-                  className="w-full resize-none rounded-lg border border-input bg-transparent px-3 py-2.5 text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 dark:bg-input/30"
+                  className="w-full resize-none rounded-lg border border-input bg-white/5 px-3 py-2.5 text-[16px] text-white/90 placeholder:text-white/30 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                 />
               </div>
             </CardContent>
