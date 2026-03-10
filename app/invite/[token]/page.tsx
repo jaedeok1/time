@@ -90,7 +90,15 @@ function HourlyDragGrid({
   setUnavailableSlots: React.Dispatch<React.SetStateAction<Set<string>>>;
 }) {
   const [activeDate, setActiveDate] = useState(dates[0] || "");
-  const dragRef = useRef<{ active: boolean; paintValue: boolean } | null>(null);
+  const dragRef = useRef<{
+    paintValue: boolean;
+    startKey: string;
+    startX: number;
+    startY: number;
+    pointerId: number;
+    timer: ReturnType<typeof setTimeout> | null;
+    dragging: boolean;
+  } | null>(null);
 
   const isUnavailable = (date: string, hour: number) =>
     unavailableSlots.has(slotKey(date, hour));
@@ -110,14 +118,42 @@ function HourlyDragGrid({
     if (!cell) return;
     const key = cell.dataset.slotKey!;
     const paintValue = !unavailableSlots.has(key);
-    dragRef.current = { active: true, paintValue };
-    applySlot(key, paintValue);
-    e.currentTarget.setPointerCapture(e.pointerId);
-    e.preventDefault();
+
+    // Mouse: activate drag immediately
+    if (e.pointerType === "mouse") {
+      dragRef.current = { paintValue, startKey: key, startX: e.clientX, startY: e.clientY, pointerId: e.pointerId, timer: null, dragging: true };
+      applySlot(key, paintValue);
+      e.currentTarget.setPointerCapture(e.pointerId);
+      e.preventDefault();
+      return;
+    }
+
+    // Touch: wait for long-press before activating drag
+    const container = e.currentTarget;
+    const timer = setTimeout(() => {
+      if (dragRef.current) {
+        dragRef.current.dragging = true;
+        container.setPointerCapture(dragRef.current.pointerId);
+        applySlot(dragRef.current.startKey, dragRef.current.paintValue);
+      }
+    }, 200);
+
+    dragRef.current = { paintValue, startKey: key, startX: e.clientX, startY: e.clientY, pointerId: e.pointerId, timer, dragging: false };
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragRef.current?.active) return;
+    if (!dragRef.current) return;
+    const { dragging, startY, timer } = dragRef.current;
+
+    if (!dragging) {
+      // Cancel long-press if user scrolls vertically
+      if (Math.abs(e.clientY - startY) > 10) {
+        if (timer) clearTimeout(timer);
+        dragRef.current = null;
+      }
+      return;
+    }
+
     const el = document.elementFromPoint(e.clientX, e.clientY);
     if (!el) return;
     const cell = el.closest("[data-slot-key]") as HTMLElement | null;
@@ -125,7 +161,17 @@ function HourlyDragGrid({
     applySlot(cell.dataset.slotKey!, dragRef.current.paintValue);
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current) return;
+    const { dragging, timer, startKey, paintValue } = dragRef.current;
+
+    if (timer) clearTimeout(timer);
+
+    // Tap (no drag activated) → single cell toggle
+    if (!dragging) {
+      applySlot(startKey, paintValue);
+    }
+
     dragRef.current = null;
   };
 
@@ -206,7 +252,7 @@ function HourlyDragGrid({
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        style={{ touchAction: "none" }}
+        style={{ touchAction: "pan-y" }}
       >
         {TIME_GROUPS.map((group) => (
           <div key={group.label} className="mb-4">
